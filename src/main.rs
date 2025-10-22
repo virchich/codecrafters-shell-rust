@@ -1,12 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-fn is_command_allowed(command: &str) -> bool {
-    let allowed_commands: [String; 0] = [];
-
-    allowed_commands.contains(&command.to_string())
-}
-
 fn read_command() -> String {
     print!("$ ");
     io::stdout().flush().unwrap();
@@ -16,6 +10,12 @@ fn read_command() -> String {
     io::stdin().read_line(&mut command).unwrap();
 
     command
+}
+
+fn is_command_allowed(command: &str) -> bool {
+    let allowed_commands: [String; 0] = [];
+
+    allowed_commands.contains(&command.to_string())
 }
 
 fn repl() {

@@ -1,10 +1,13 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::process::exit;
 
-fn main() {
+fn is_command_allowed(command: &str) -> bool {
     let allowed_commands: [String; 0] = [];
 
+    allowed_commands.contains(&command.to_string())
+}
+
+fn read_command() -> String {
     print!("$ ");
     io::stdout().flush().unwrap();
 
@@ -12,8 +15,19 @@ fn main() {
     let mut command = String::new();
     io::stdin().read_line(&mut command).unwrap();
 
-    if !allowed_commands.contains(&command) {
-        eprintln!("{}: command not found", command.trim());
-        exit(1);
+    command
+}
+
+fn repl() {
+    loop {
+        let command = read_command();
+
+        if !is_command_allowed(&command) {
+            eprintln!("{}: command not found", command.trim());
+        }
     }
+}
+
+fn main() {
+    repl()
 }

@@ -1,7 +1,8 @@
-use std::env::{split_paths, var};
-use std::path::{Path};
 use crate::commands::command::Command;
 use crate::commands::validator::is_command_allowed;
+use std::env::{split_paths, var};
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 pub fn type_of(command: &Command) {
     if command.arguments.is_empty() || command.arguments.len() > 1 {
@@ -36,9 +37,13 @@ fn type_path_handler(command: &String, paths: String) {
             for dir_entry in std::fs::read_dir(dir).unwrap() {
                 let entry = dir_entry.unwrap().path();
 
-                if entry.ends_with(command) {
-                    println!("{} is {}", command, entry.display());
-                    return
+                if entry.is_file() {
+                    let entry_permissions = entry.metadata().unwrap().permissions().mode();
+
+                    if entry.ends_with(command) && (entry_permissions & 0o111) != 0 {
+                        println!("{} is {}", command, entry.display());
+                        return;
+                    }
                 }
             }
         }

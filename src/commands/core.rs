@@ -1,4 +1,7 @@
-use crate::commands::command::{echo, exit, type_of, Command};
+use crate::commands::cmd::echo::echo;
+use crate::commands::cmd::exit::exit;
+use crate::commands::cmd::type_of::type_of;
+use crate::commands::command::Command;
 use std::io;
 use std::io::Write;
 

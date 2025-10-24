@@ -1,6 +1,6 @@
+use crate::commands::command::{echo, exit, type_of, Command};
 use std::io;
 use std::io::Write;
-use crate::commands::command::{echo, exit, Command};
 
 pub fn read_command() -> Command {
     print!("$ ");
@@ -24,14 +24,9 @@ pub fn read_command() -> Command {
 
 pub fn run_command(command: &Command) {
     match command.command.as_str() {
-        "exit" => {
-            exit(command)
-        }
-        "echo" => {
-            echo(command);
-        }
-        _ => {
-            std::process::exit(255);
-        }
+        "exit" => exit(command),
+        "echo" => echo(command),
+        "type" => type_of(command),
+        _ => std::process::exit(255),
     }
 }

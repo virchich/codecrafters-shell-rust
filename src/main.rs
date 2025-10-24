@@ -7,7 +7,7 @@ fn repl() {
     loop {
         let command = read_command();
 
-        if !is_command_allowed(&command) {
+        if !is_command_allowed(&command.command) {
             eprintln!("{}: command not found", command.command);
             continue;
         }

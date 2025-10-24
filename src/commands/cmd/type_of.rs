@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::commands::validator::{is_command_allowed, type_path_handler};
+use crate::commands::validator::{is_command_allowed, is_command_executable};
 use std::env::var;
 
 pub fn type_of(command: &Command) {
@@ -17,11 +17,11 @@ pub fn type_of(command: &Command) {
 
     match var("PATH") {
         Ok(path) => {
-            let (result, output) = type_path_handler(&command_argument, path);
-            if result {
-                println!("{}", output);
+            let (executable, executable_path) = is_command_executable(&command_argument, path);
+            if executable {
+                println!("{} is {}", command_argument, executable_path);
             } else {
-                eprintln!("{}", output);
+                eprintln!("{}: not found", command_argument);
             }
             return;
         }

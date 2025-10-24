@@ -1,4 +1,5 @@
 use crate::commands::cmd::echo::echo;
+use crate::commands::cmd::exec::exec;
 use crate::commands::cmd::exit::exit;
 use crate::commands::cmd::type_of::type_of;
 use crate::commands::command::Command;
@@ -30,6 +31,6 @@ pub fn run_command(command: &Command) {
         "exit" => exit(command),
         "echo" => echo(command),
         "type" => type_of(command),
-        _ => std::process::exit(255),
+        _ => exec(command),
     }
 }

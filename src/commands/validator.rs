@@ -8,7 +8,7 @@ pub fn is_command_allowed(command: &String) -> bool {
     allowed_commands.contains(command)
 }
 
-pub fn type_path_handler(command: &String, paths: String) -> (bool, String) {
+pub fn is_command_executable(command: &String, paths: String) -> (bool, String) {
     for path in split_paths(&paths) {
         let dir = Path::new(path.as_path());
 
@@ -20,12 +20,12 @@ pub fn type_path_handler(command: &String, paths: String) -> (bool, String) {
                     let entry_permissions = entry.metadata().unwrap().permissions().mode();
 
                     if entry.ends_with(command) && (entry_permissions & 0o111) != 0 {
-                        return (true, format!("{} is {}", command, entry.display()));
+                        return (true, entry.display().to_string());
                     }
                 }
             }
         }
     }
 
-    (false, format!("{}: not found", command))
+    (false, String::from(""))
 }

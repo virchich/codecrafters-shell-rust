@@ -1,8 +1,6 @@
 use crate::commands::command::Command;
-use crate::commands::validator::is_command_allowed;
-use std::env::{split_paths, var};
-use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
+use crate::commands::validator::{is_command_allowed, type_path_handler};
+use std::env::var;
 
 pub fn type_of(command: &Command) {
     if command.arguments.is_empty() || command.arguments.len() > 1 {
@@ -19,7 +17,12 @@ pub fn type_of(command: &Command) {
 
     match var("PATH") {
         Ok(path) => {
-            type_path_handler(&command_argument, path);
+            let (result, output) = type_path_handler(&command_argument, path);
+            if result {
+                println!("{}", output);
+            } else {
+                eprintln!("{}", output);
+            }
             return;
         }
         Err(_) => {
@@ -27,27 +30,4 @@ pub fn type_of(command: &Command) {
             return;
         }
     }
-}
-
-fn type_path_handler(command: &String, paths: String) {
-    for path in split_paths(&paths) {
-        let dir = Path::new(path.as_path());
-
-        if dir.exists() && dir.is_dir() {
-            for dir_entry in std::fs::read_dir(dir).unwrap() {
-                let entry = dir_entry.unwrap().path();
-
-                if entry.is_file() {
-                    let entry_permissions = entry.metadata().unwrap().permissions().mode();
-
-                    if entry.ends_with(command) && (entry_permissions & 0o111) != 0 {
-                        println!("{} is {}", command, entry.display());
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    eprintln!("{}: not found", command);
 }

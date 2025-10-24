@@ -2,7 +2,7 @@
 use std::io::{self, Write};
 
 fn read_command() -> String {
-    print!("> ");
+    print!("$ ");
     io::stdout().flush().unwrap();
 
     // Wait for user input

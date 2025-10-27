@@ -3,7 +3,7 @@ use crate::commands::command::Command;
 
 pub fn cd(command: &Command) {
     let mut path: String = "~".to_string();
-    if command.arguments.is_empty() {
+    if command.arguments.is_empty() || (command.arguments.len() >= 1 && command.arguments[0] == "~"){
         match env::var("HOME") {
             Ok(home_path) => {
                 path = home_path;

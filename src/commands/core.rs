@@ -1,3 +1,4 @@
+use crate::commands::cmd::cd::cd;
 use crate::commands::cmd::echo::echo;
 use crate::commands::cmd::exec::exec;
 use crate::commands::cmd::exit::exit;
@@ -33,6 +34,7 @@ pub fn run_command(command: &Command) {
         "echo" => echo(command),
         "type" => type_of(command),
         "pwd" => pwd(command),
+        "cd" => cd(command),
         _ => exec(command),
     }
 }

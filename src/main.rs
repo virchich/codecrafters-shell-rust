@@ -6,7 +6,10 @@ fn repl() {
     loop {
         let command = read_command();
 
-        run_command(&command);
+        match command {
+            Some(command) => { run_command(&command); }
+            None => continue,
+        }
     }
 }
 

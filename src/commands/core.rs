@@ -5,10 +5,12 @@ use crate::commands::cmd::exit::exit;
 use crate::commands::cmd::pwd::pwd;
 use crate::commands::cmd::type_of::type_of;
 use crate::commands::command::Command;
+use crate::commands::scanner::lexer::Lexer;
+use crate::commands::scanner::token::TokenType;
 use std::io;
 use std::io::Write;
 
-pub fn read_command() -> Command {
+pub fn read_command() -> Option<Command> {
     print!("$ ");
     io::stdout().flush().unwrap();
 
@@ -16,16 +18,18 @@ pub fn read_command() -> Command {
     let mut command = String::new();
     io::stdin().read_line(&mut command).unwrap();
 
-    let parts: Vec<String> = command
-        .trim()
-        .split_whitespace()
-        .map(|s| s.to_string())
-        .collect();
+    let scanner = Lexer::new(command);
+    let parts = scanner.scan_tokens();
 
-    Command {
-        command: parts[0].clone(),
-        arguments: parts[1..].to_vec(),
+    if parts.is_empty() || parts[0].token_type == TokenType::Eof {
+        return None;
     }
+
+    Some(Command {
+        command: parts[0].lexeme.clone(),
+        // Exclude Eof token and command name
+        arguments: parts[1..parts.len() - 1].iter().map(|token| token.lexeme.clone()).collect(),
+    })
 }
 
 pub fn run_command(command: &Command) {

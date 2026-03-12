@@ -79,6 +79,11 @@ impl Lexer {
         // The first character was already consumed by scan_token.
         // If it's a quote, handle it; otherwise append it.
         match first_char {
+            '\\' => {
+                if !self.is_at_end() {
+                    buffer.push(self.advance());
+                }
+            }
             '\'' => buffer.push_str(&self.scan_single_quote()),
             '"' => buffer.push_str(&self.scan_double_quote()),
             _ => buffer.push(first_char),
@@ -87,6 +92,12 @@ impl Lexer {
         // Keep building the argument until we hit a separator.
         while !self.is_at_end() {
             match self.peek() {
+                '\\' => {
+                    self.advance(); // consume the backslash
+                    if !self.is_at_end() {
+                        buffer.push(self.advance()); // add the escaped character
+                    }
+                }
                 '\'' => {
                     self.advance(); // consume the opening quote
                     buffer.push_str(&self.scan_single_quote());

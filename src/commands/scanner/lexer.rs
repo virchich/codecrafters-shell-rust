@@ -49,10 +49,7 @@ impl Lexer {
     }
 
     fn add_token(&mut self, token_type: TokenType, lexeme: String) {
-        self.tokens.push(Token {
-            token_type,
-            lexeme,
-        });
+        self.tokens.push(Token { token_type, lexeme });
     }
 
     fn advance(&mut self) -> char {
@@ -70,6 +67,16 @@ impl Lexer {
             '\0'
         } else {
             self.source[self.current]
+        }
+    }
+
+    fn peek_next(&self) -> char {
+        if self.is_at_end() {
+            '\0'
+        } else if self.current + 1 >= self.source.len() {
+            '\0'
+        } else {
+            self.source[self.current + 1]
         }
     }
 
@@ -139,7 +146,16 @@ impl Lexer {
         let mut content = String::new();
 
         while !self.is_at_end() && self.peek() != '"' {
-            content.push(self.advance());
+            if (self.peek() == '\\' && self.peek_next() == '\\')
+                || (self.peek() == '\\' && self.peek_next() == '\"')
+            {
+                self.advance(); // consume the backslash
+                if !self.is_at_end() {
+                    content.push(self.advance()); // add the escaped character
+                }
+            } else {
+                content.push(self.advance());
+            }
         }
         if self.is_at_end() {
             eprintln!("Unterminated double quote");

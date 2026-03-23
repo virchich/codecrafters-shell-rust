@@ -44,6 +44,30 @@ impl Lexer {
                     self.add_token(TokenType::RedirectOut, String::from(char));
                 }
             }
+            '1' => {
+                if self.peek() == '>' && self.peek_next() == '>' {
+                    self.advance();
+                    self.advance();
+                    self.add_token(TokenType::RedirectAppend, ">>".to_string());
+                } else if self.peek() == '>' && self.peek_next() != '>' {
+                    self.advance();
+                    self.add_token(TokenType::RedirectOut, ">".to_string());
+                } else {
+                    self.scan_argument(char);
+                }
+            }
+            '2' => {
+                if self.peek() == '>' && self.peek_next() == '>' {
+                    self.advance();
+                    self.advance();
+                    self.add_token(TokenType::RedirectStdErrAppend, "2>>".to_string());
+                } else if self.peek() == '>' && self.peek_next() != '>' {
+                    self.advance();
+                    self.add_token(TokenType::RedirectStdErr, "2>".to_string());
+                } else {
+                    self.scan_argument(char);
+                }
+            }
             _ => self.scan_argument(char),
         }
     }

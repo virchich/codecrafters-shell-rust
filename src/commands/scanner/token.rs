@@ -1,13 +1,15 @@
 #[derive(PartialEq)]
 pub enum TokenType {
-    Word,         // command names, arguments, unquoted text
+    Word, // command names, arguments, unquoted text
 
     Pipe,      // |
     Semicolon, // ;
 
-    RedirectIn,     // <
-    RedirectOut,    // >
-    RedirectAppend, // >>
+    RedirectIn,           // <
+    RedirectOut,          // >
+    RedirectStdErr,       // 2>
+    RedirectAppend,       // >>
+    RedirectStdErrAppend, // 2>
 
     Eof, // end of input
 }

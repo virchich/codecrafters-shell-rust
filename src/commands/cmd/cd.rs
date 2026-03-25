@@ -1,7 +1,8 @@
 use std::env;
+use std::io::Write;
 use crate::commands::command::Command;
 
-pub fn cd(command: &Command) {
+pub fn cd(command: &Command, writer_err: &mut dyn Write) {
     let mut path: String = "~".to_string();
     if command.arguments.is_empty() || (command.arguments.len() >= 1 && command.arguments[0] == "~"){
         match env::var("HOME") {
@@ -9,7 +10,7 @@ pub fn cd(command: &Command) {
                 path = home_path;
             }
             Err(_) => {
-                eprintln!("cd: HOME variable not set");
+                writeln!(writer_err, "cd: HOME variable not set").unwrap();
                 return;
             }
         }
@@ -20,7 +21,7 @@ pub fn cd(command: &Command) {
     match env::set_current_dir(&path) {
         Ok(_) => {}
         Err(_) => {
-            eprintln!("cd: {}: No such file or directory", path);
+            writeln!(writer_err, "cd: {}: No such file or directory", path).unwrap();
         }
     }
 }

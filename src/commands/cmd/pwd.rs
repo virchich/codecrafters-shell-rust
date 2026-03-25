@@ -1,13 +1,14 @@
 use crate::commands::command::Command;
-use std::{env};
+use std::env;
+use std::io::Write;
 
-pub fn pwd(command: &Command) {
+pub fn pwd(command: &Command, writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
     match env::current_dir() {
         Ok(output) => {
-            println!("{}", output.display());
+            writeln!(writer_out, "{}", output.display()).unwrap();
         }
         Err(e) => {
-            eprintln!("{}: {}", command.command, e);
+            writeln!(writer_err, "{}: {}", command.command, e).unwrap();
         }
     }
 }

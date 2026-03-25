@@ -1,13 +1,13 @@
 mod commands;
 
-use commands::core::{read_command, run_command};
+use commands::core::{read_line, run_statement};
 
 fn repl() {
     loop {
-        let command = read_command();
+        let statement = read_line();
 
-        match command {
-            Some(command) => { run_command(&command); }
+        match statement {
+            Some(command) => { run_statement(&command); }
             None => continue,
         }
     }

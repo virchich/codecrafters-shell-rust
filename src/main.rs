@@ -1,17 +1,8 @@
 mod commands;
 
-use commands::core::{read_line, run_statement};
+use crate::repl::repl::repl;
 
-fn repl() {
-    loop {
-        let statement = read_line();
-
-        match statement {
-            Some(command) => { run_statement(&command); }
-            None => continue,
-        }
-    }
-}
+mod repl;
 
 fn main() {
     repl()

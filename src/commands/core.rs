@@ -4,28 +4,10 @@ use crate::commands::cmd::exec::exec;
 use crate::commands::cmd::exit::exit;
 use crate::commands::cmd::pwd::pwd;
 use crate::commands::cmd::type_of::type_of;
-use crate::commands::parser::parser::Parser;
-use crate::commands::scanner::lexer::Lexer;
 use crate::commands::statement::{Redirect, RedirectMode, RedirectStatement};
 use std::fs::File;
 use std::io;
 use std::io::Write;
-
-pub fn read_line() -> Option<RedirectStatement> {
-    print!("$ ");
-    io::stdout().flush().unwrap();
-
-    // Wait for user input
-    let mut command = String::new();
-    io::stdin().read_line(&mut command).unwrap();
-
-    let scanner = Lexer::new(command);
-    let tokens = scanner.scan_tokens();
-
-    let mut parser = Parser::new(tokens);
-
-    parser.parse()
-}
 
 fn open_redirect(redirect: &Redirect) -> File {
     match redirect.redirect_mode {

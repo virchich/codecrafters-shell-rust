@@ -1,12 +1,12 @@
+use crate::commands::core::run_statement;
 use crate::commands::parser::parser::Parser;
 use crate::commands::scanner::lexer::Lexer;
-use crate::commands::core::run_statement;
-use crate::repl::ReplHelper;
+use crate::repl::repl_helper::ReplHelper;
 use rustyline::Editor;
 
 pub fn repl() {
     let mut editor: Editor<ReplHelper, _> = Editor::new().unwrap();
-    editor.set_helper(Some(ReplHelper));
+    editor.set_helper(Some(ReplHelper::new()));
 
     loop {
         let line = editor.readline("$ ");

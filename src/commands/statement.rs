@@ -1,5 +1,9 @@
 use crate::commands::command::Command;
 
+pub struct Pipeline {
+    pub(crate) segments: Vec<RedirectStatement>,
+}
+
 pub struct RedirectStatement {
     pub command: Command,
     pub redirect_std_out: Option<Redirect>,

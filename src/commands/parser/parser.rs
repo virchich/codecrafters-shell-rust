@@ -1,6 +1,6 @@
 use crate::commands::command::Command;
 use crate::commands::scanner::token::{Token, TokenType};
-use crate::commands::statement::{Redirect, RedirectMode, RedirectStatement};
+use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -15,12 +15,33 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Option<RedirectStatement> {
+    pub fn parse(&mut self) -> Option<Pipeline> {
         if self.tokens.is_empty() || self.tokens[0].token_type == TokenType::Eof {
             return None;
         }
 
-        Some(self.redirect_statement())
+        Some(self.pipeline())
+    }
+
+    fn pipeline(&mut self) -> Pipeline {
+        let mut segments: Vec<RedirectStatement> = Vec::new();
+
+        while self.position < self.tokens.len()
+            && self.tokens[self.position].token_type != TokenType::Eof
+        {
+            segments.push(self.redirect_statement());
+
+            // If the next token is a pipe, skip it and continue parsing the next segment
+            if self.position < self.tokens.len()
+                && self.tokens[self.position].token_type == TokenType::Pipe
+            {
+                self.position += 1; // move past the pipe token
+            } else {
+                break; // No more segments to parse
+            }
+        }
+
+        Pipeline { segments }
     }
 
     fn redirect_statement(&mut self) -> RedirectStatement {
@@ -30,6 +51,7 @@ impl Parser {
 
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
+            && self.tokens[self.position].token_type != TokenType::Pipe
         {
             match self.tokens[self.position].token_type {
                 TokenType::Word => {

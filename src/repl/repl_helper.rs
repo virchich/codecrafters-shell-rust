@@ -88,5 +88,7 @@ fn build_executables_list() -> Vec<Pair> {
         })
     }
 
+    executables_pair_list.sort_by(|a, b| a.display.cmp(&b.display));
+
     executables_pair_list
 }

@@ -1,9 +1,9 @@
-use crate::commands::cmd::cd::cd;
-use crate::commands::cmd::echo::echo;
-use crate::commands::cmd::exec::exec;
-use crate::commands::cmd::exit::exit;
-use crate::commands::cmd::pwd::pwd;
-use crate::commands::cmd::type_of::type_of;
+use crate::commands::built_ins::cd::cd;
+use crate::commands::built_ins::echo::echo;
+use crate::commands::built_ins::exec::exec;
+use crate::commands::built_ins::exit::exit;
+use crate::commands::built_ins::pwd::pwd;
+use crate::commands::built_ins::type_of::type_of;
 use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
 use crate::commands::validator::is_command_built_in;
 use std::fs::File;

@@ -4,6 +4,7 @@ use std::path::Path;
 
 pub fn is_command_built_in(command: &String) -> bool {
     let built_in_commands = [
+        "history".to_string(),
         "exit".to_string(),
         "echo".to_string(),
         "type".to_string(),

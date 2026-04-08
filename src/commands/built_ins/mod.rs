@@ -4,3 +4,4 @@ pub mod type_of;
 pub mod exec;
 pub mod pwd;
 pub mod cd;
+pub mod history;

@@ -53,6 +53,10 @@ impl Completer for ReplHelper {
                 display: "pwd".to_string(),
                 replacement: "pwd ".to_string(),
             },
+            Pair {
+                display: "history".to_string(),
+                replacement: "history ".to_string(),
+            },
         ];
 
         let candidates: Vec<Pair> = build_ins

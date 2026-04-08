@@ -2,15 +2,15 @@ use std::env::split_paths;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-pub fn is_command_allowed(command: &String) -> bool {
-    let allowed_commands = [
+pub fn is_command_built_in(command: &String) -> bool {
+    let built_in_commands = [
         "exit".to_string(),
         "echo".to_string(),
         "type".to_string(),
         "pwd".to_string(),
     ];
 
-    allowed_commands.contains(command)
+    built_in_commands.contains(command)
 }
 
 pub fn is_command_executable(command: &String, paths: String) -> (bool, String) {

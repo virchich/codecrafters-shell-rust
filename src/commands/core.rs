@@ -5,6 +5,7 @@ use crate::commands::cmd::exit::exit;
 use crate::commands::cmd::pwd::pwd;
 use crate::commands::cmd::type_of::type_of;
 use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
+use crate::commands::validator::is_command_built_in;
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -38,54 +39,108 @@ pub fn run_statement(pipeline: &Pipeline) {
 }
 
 fn run_pipeline(pipeline: &Pipeline) {
-    let mut children: Vec<Child> = Vec::new();
     let segment_count = pipeline.segments.len();
+    let mut children: Vec<Child> = Vec::new();
+
+    // Tracks the output from the previous segment.
+    // None for the first segment (reads from terminal).
+    // Some(bytes) for subsequent segments (fed from previous output).
+    let mut prev_output: Option<Vec<u8>> = None;
 
     for (i, segment) in pipeline.segments.iter().enumerate() {
-        let mut cmd = Command::new(&segment.command.command);
-        cmd.args(&segment.command.arguments);
+        let is_last = i == segment_count - 1;
 
-        // Set up stdin: first command gets terminal stdin, others get piped from previous
-        if i == 0 {
-            cmd.stdin(Stdio::inherit());
-        } else {
-            // Take stdout from the previous child and use it as our stdin
-            let prev_stdout = children[i - 1].stdout.take().unwrap();
-            cmd.stdin(prev_stdout);
-        }
+        if is_command_built_in(&segment.command.command) {
+            // --- Builtin command ---
+            // Run it with a buffer as stdout writer.
+            let mut buffer: Vec<u8> = Vec::new();
 
-        // Set up stdout: last command goes to terminal (or redirect), others pipe to next
-        if i == segment_count - 1 {
-            // Last segment — check for stdout redirect
-            if let Some(redirect) = &segment.redirect_std_out {
-                let file = open_redirect(redirect);
-                cmd.stdout(file);
+            // Determine where to write: if last segment with redirect, use file;
+            // if last segment without redirect, use real stdout;
+            // otherwise capture into buffer for next segment.
+            let mut writer: Box<dyn Write> = if is_last {
+                if let Some(redirect) = &segment.redirect_std_out {
+                    Box::new(open_redirect(redirect))
+                } else {
+                    Box::new(io::stdout())
+                }
             } else {
-                cmd.stdout(Stdio::inherit());
+                Box::new(&mut buffer)
+            };
+
+            let mut stderr_writer: Box<dyn Write> = get_redirect(&segment);
+
+            match segment.command.command.as_str() {
+                "exit" => exit(&segment.command, &mut *stderr_writer),
+                "echo" => echo(&segment.command, &mut *writer),
+                "type" => type_of(&segment.command, &mut *writer, &mut *stderr_writer),
+                "pwd" => pwd(&segment.command, &mut *writer, &mut *stderr_writer),
+                "cd" => cd(&segment.command, &mut *stderr_writer),
+                _ => {}
+            }
+
+            // Drop writer so buffer is no longer borrowed
+            drop(writer);
+
+            if !is_last {
+                prev_output = Some(buffer);
             }
         } else {
-            // Not last — pipe stdout to the next command
-            cmd.stdout(Stdio::piped());
-        }
+            // --- External command ---
+            let mut cmd = Command::new(&segment.command.command);
+            cmd.args(&segment.command.arguments);
 
-        // Stderr: check for redirect, otherwise inherit terminal
-        if let Some(redirect) = &segment.redirect_std_err {
-            let file = open_redirect(redirect);
-            cmd.stderr(file);
-        } else {
-            cmd.stderr(Stdio::inherit());
-        }
-
-        match cmd.spawn() {
-            Ok(child) => children.push(child),
-            Err(e) => {
-                eprintln!("{}: {}", segment.command.command, e);
-                return;
+            // Stdin: first segment inherits terminal, others get previous output
+            if let Some(_) = prev_output {
+                // Previous segment was a builtin — pipe it's buffer in
+                cmd.stdin(Stdio::piped());
+            } else if i > 0 {
+                // Previous segment was an external — take its stdout
+                let prev_stdout = children.last_mut().unwrap().stdout.take().unwrap();
+                cmd.stdin(prev_stdout);
+            } else {
+                cmd.stdin(Stdio::inherit());
             }
+
+            // Stdout: last goes to terminal/redirect, others pipe forward
+            if is_last {
+                if let Some(redirect) = &segment.redirect_std_out {
+                    cmd.stdout(open_redirect(redirect));
+                } else {
+                    cmd.stdout(Stdio::inherit());
+                }
+            } else {
+                cmd.stdout(Stdio::piped());
+            }
+
+            // Stderr
+            if let Some(redirect) = &segment.redirect_std_err {
+                cmd.stderr(open_redirect(redirect));
+            } else {
+                cmd.stderr(Stdio::inherit());
+            }
+
+            match cmd.spawn() {
+                Ok(mut child) => {
+                    // If previous was a builtin, write its output to this child's stdin
+                    if let Some(output) = prev_output.take() {
+                        let mut child_stdin = child.stdin.take().unwrap();
+                        child_stdin.write_all(&output).unwrap();
+                        drop(child_stdin); // close stdin so child knows input is done
+                    }
+                    children.push(child);
+                }
+                Err(e) => {
+                    eprintln!("{}: {}", segment.command.command, e);
+                    return;
+                }
+            }
+
+            prev_output = None;
         }
     }
 
-    // Wait for all children to finish
+    // Wait for all external children to finish
     for child in children.iter_mut() {
         child.wait().unwrap();
     }
@@ -99,12 +154,7 @@ pub fn run_redirect(redirect_statement: &RedirectStatement) {
             Box::new(io::stdout())
         };
 
-    let mut stderr_writer: Box<dyn Write> =
-        if let Some(redirect) = &redirect_statement.redirect_std_err {
-            Box::new(open_redirect(redirect))
-        } else {
-            Box::new(io::stderr())
-        };
+    let mut stderr_writer = get_redirect(&redirect_statement);
 
     match redirect_statement.command.command.as_str() {
         "exit" => exit(&redirect_statement.command, &mut *stderr_writer),
@@ -122,4 +172,14 @@ pub fn run_redirect(redirect_statement: &RedirectStatement) {
         "cd" => cd(&redirect_statement.command, &mut *stderr_writer),
         _ => exec(&redirect_statement),
     }
+}
+
+fn get_redirect(redirect_statement: &&RedirectStatement) -> Box<dyn Write> {
+    let stderr_writer: Box<dyn Write> = if let Some(redirect) = &redirect_statement.redirect_std_err
+    {
+        Box::new(open_redirect(redirect))
+    } else {
+        Box::new(io::stderr())
+    };
+    stderr_writer
 }

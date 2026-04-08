@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::commands::validator::{is_command_allowed, is_command_executable};
+use crate::commands::validator::{is_command_built_in, is_command_executable};
 use std::env::var;
 use std::io::Write;
 
@@ -11,7 +11,7 @@ pub fn type_of(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
 
     let command_argument = command.arguments.first().unwrap();
 
-    if is_command_allowed(command_argument) {
+    if is_command_built_in(command_argument) {
         writeln!(writer_out, "{} is a shell builtin", command_argument).unwrap();
         return;
     }

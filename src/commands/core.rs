@@ -72,7 +72,7 @@ fn run_pipeline(pipeline: &Pipeline) {
             let mut stderr_writer: Box<dyn Write> = get_redirect(&segment);
 
             match segment.command.command.as_str() {
-                "history" => history(&mut *writer),
+                "history" => history(&segment.command, &mut *writer),
                 "exit" => exit(&segment.command, &mut *stderr_writer),
                 "echo" => echo(&segment.command, &mut *writer),
                 "type" => type_of(&segment.command, &mut *writer, &mut *stderr_writer),
@@ -159,7 +159,7 @@ pub fn run_redirect(redirect_statement: &RedirectStatement) {
     let mut stderr_writer = get_redirect(&redirect_statement);
 
     match redirect_statement.command.command.as_str() {
-        "history" => history(&mut *stdout_writer),
+        "history" => history(&redirect_statement.command, &mut *stdout_writer),
         "exit" => exit(&redirect_statement.command, &mut *stderr_writer),
         "echo" => echo(&redirect_statement.command, &mut *stdout_writer),
         "type" => type_of(

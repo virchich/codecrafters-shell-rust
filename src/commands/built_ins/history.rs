@@ -14,11 +14,7 @@ pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write
             }
             other => match other.parse::<usize>() {
                 Ok(history_limit) => {
-                    let required_history = get_history(history_limit as i16);
-
-                    for (i, command) in required_history.iter().enumerate() {
-                        writeln!(output, "  {} {}", i + 1, command).unwrap();
-                    }
+                    print_history(history_limit as i16, output);
                 }
                 Err(_) => {
                     writeln!(stderr, "history: {}: use either numeric value to show last N commands in history or \"-r\" option to load history from file", command.arguments[0]).unwrap();
@@ -27,11 +23,20 @@ pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write
             },
         }
     } else {
-        let required_history = get_history(-1);
+        print_history(-1, output);
+    }
+}
 
-        for (i, command) in required_history.iter().enumerate() {
-            writeln!(output, "  {} {}", i + 1, command).unwrap();
-        }
+fn print_history(n_entries_to_show: i16, output: &mut dyn Write) {
+    let entries = history_store::get_all();
+    let skip = if n_entries_to_show < 0 {
+        0
+    } else {
+        entries.len().saturating_sub(n_entries_to_show as usize)
+    };
+
+    for (i, command) in entries.iter().enumerate().skip(skip) {
+        writeln!(output, "{:>5}  {}", i + 1, command).unwrap();
     }
 }
 
@@ -48,23 +53,4 @@ fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
             writeln!(stderr, "history: {}: {}", path, e).unwrap();
         }
     }
-}
-
-fn get_history(n_entries_to_show: i16) -> Vec<String> {
-    let entries = history_store::get_all();
-    let history_entries_to_skip: usize = if n_entries_to_show < 0 {
-        0
-    } else {
-        entries
-            .len()
-            .saturating_sub(n_entries_to_show.abs() as usize)
-    };
-
-    let mut output_history: Vec<String> = Vec::new();
-
-    for command in entries.iter().skip(history_entries_to_skip) {
-        output_history.push(command.to_string());
-    }
-
-    output_history
 }

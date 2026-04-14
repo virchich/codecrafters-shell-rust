@@ -1,10 +1,18 @@
 use crate::commands::command::Command;
 use crate::repl::history_store;
+use std::fs::OpenOptions;
 use std::io::Write;
 
 pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write) {
     if command.arguments.len() > 0 {
         match command.arguments[0].as_str() {
+            "-a" => {
+                if command.arguments.len() < 2 {
+                    writeln!(stderr, "history: -r: filename argument required").unwrap();
+                    return;
+                }
+                append_history_to_file(&command.arguments[1], stderr);
+            }
             "-r" => {
                 if command.arguments.len() < 2 {
                     writeln!(stderr, "history: -r: filename argument required").unwrap();
@@ -65,13 +73,46 @@ fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
 fn write_history_to_file(path: &str, stderr: &mut dyn Write) {
     let entries = history_store::get_all();
 
-    // entries.push(format!("history -w {}", path));
-    // entries.push("\n".to_string()); // Add newline to the end of file.
-
     match std::fs::write(path, entries.join("\n") + "\n") {
         Ok(_) => {}
         Err(e) => {
             writeln!(stderr, "history: {}: {}", path, e).unwrap();
+        }
+    }
+}
+
+fn append_history_to_file(path: &str, stderr: &mut dyn Write) {
+    let current_history = history_store::get_all();
+
+    match std::fs::exists(path) {
+        Ok(_) => match std::fs::read_to_string(path) {
+            Ok(_) => {
+                let mut history_to_append: Vec<String> = vec![];
+
+                for (i, command) in current_history.iter().rev().enumerate() {
+                    if command.starts_with("history -a") && i > 0 {
+                        break;
+                    }
+
+                    history_to_append.push(command.to_string());
+                }
+
+                let mut file = OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(path)
+                    .unwrap();
+
+                for command in history_to_append.iter().rev() {
+                    writeln!(file, "{}", command).unwrap();
+                }
+            }
+            Err(e) => {
+                writeln!(stderr, "history: {}: {}", path, e).unwrap();
+            }
+        },
+        Err(_) => {
+            write_history_to_file(path, stderr);
         }
     }
 }

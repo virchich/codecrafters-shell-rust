@@ -12,6 +12,13 @@ pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write
                 }
                 load_history_from_file(&command.arguments[1], stderr);
             }
+            "-w" => {
+                if command.arguments.len() < 2 {
+                    writeln!(stderr, "history: -w: filename argument required").unwrap();
+                    return;
+                }
+                write_history_to_file(&command.arguments[1], stderr);
+            }
             other => match other.parse::<usize>() {
                 Ok(history_limit) => {
                     print_history(history_limit as i16, output);
@@ -49,6 +56,20 @@ fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
                 }
             }
         }
+        Err(e) => {
+            writeln!(stderr, "history: {}: {}", path, e).unwrap();
+        }
+    }
+}
+
+fn write_history_to_file(path: &str, stderr: &mut dyn Write) {
+    let entries = history_store::get_all();
+
+    // entries.push(format!("history -w {}", path));
+    // entries.push("\n".to_string()); // Add newline to the end of file.
+
+    match std::fs::write(path, entries.join("\n") + "\n") {
+        Ok(_) => {}
         Err(e) => {
             writeln!(stderr, "history: {}: {}", path, e).unwrap();
         }

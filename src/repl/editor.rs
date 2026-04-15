@@ -1,7 +1,9 @@
+use crate::commands::built_ins::history::load_history_from_file;
 use crate::repl::repl_helper::ReplHelper;
 use rustyline::config::BellStyle;
 use rustyline::history::DefaultHistory;
 use rustyline::{CompletionType, Config, Editor};
+use std::{env, fs};
 
 pub fn get_editor() -> Editor<ReplHelper, DefaultHistory> {
     let config = Config::builder()
@@ -13,5 +15,31 @@ pub fn get_editor() -> Editor<ReplHelper, DefaultHistory> {
 
     let mut editor: Editor<ReplHelper, _> = Editor::with_config(config).unwrap();
     editor.set_helper(Some(ReplHelper::new()));
+
+    match env::var("HISTFILE") {
+        Ok(path) => {
+            load_history_from_file_on_startup(path.as_str(), &mut editor);
+        }
+        Err(_) => {}
+    }
+
     editor
+}
+
+fn load_history_from_file_on_startup(
+    history_file: &str,
+    editor: &mut Editor<ReplHelper, DefaultHistory>,
+) {
+    match fs::read_to_string(history_file) {
+        Ok(contents) => {
+            for line in contents.lines() {
+                editor.add_history_entry(line.to_string()).unwrap();
+            }
+
+            load_history_from_file(history_file, &mut std::io::stderr());
+        }
+        Err(e) => {
+            eprintln!("Failed to load history from file {}: {}", history_file, e);
+        }
+    }
 }

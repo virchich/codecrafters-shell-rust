@@ -8,7 +8,7 @@ pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write
         match command.arguments[0].as_str() {
             "-a" => {
                 if command.arguments.len() < 2 {
-                    writeln!(stderr, "history: -r: filename argument required").unwrap();
+                    writeln!(stderr, "history: -a: filename argument required").unwrap();
                     return;
                 }
                 append_history_to_file(&command.arguments[1], stderr);
@@ -55,7 +55,7 @@ fn print_history(n_entries_to_show: i16, output: &mut dyn Write) {
     }
 }
 
-fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
+pub fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
     match std::fs::read_to_string(path) {
         Ok(contents) => {
             for line in contents.lines() {

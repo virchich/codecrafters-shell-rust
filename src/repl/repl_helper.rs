@@ -67,13 +67,19 @@ impl Completer for ReplHelper {
             let mut candidates: Vec<Pair> = candidates
                 .into_iter()
                 .map(|c| {
-                    let replacement = if c.replacement.ends_with('/') {
+                    let is_dir = c.replacement.ends_with('/');
+                    let replacement = if is_dir {
                         c.replacement
                     } else {
                         format!("{} ", c.replacement)
                     };
+                    let display = if is_dir {
+                        format!("{}/", c.display)
+                    } else {
+                        c.display
+                    };
                     Pair {
-                        display: c.display,
+                        display,
                         replacement,
                     }
                 })

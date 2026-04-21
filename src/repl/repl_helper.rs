@@ -64,7 +64,7 @@ impl Completer for ReplHelper {
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         if line[..pos].contains(' ') {
             let (start, candidates) = self.completer.complete(line, pos, ctx)?;
-            let candidates = candidates
+            let mut candidates: Vec<Pair> = candidates
                 .into_iter()
                 .map(|c| {
                     let replacement = if c.replacement.ends_with('/') {
@@ -78,6 +78,7 @@ impl Completer for ReplHelper {
                     }
                 })
                 .collect();
+            candidates.sort_by(|a, b| a.display.cmp(&b.display));
             return Ok((start, candidates));
         }
 

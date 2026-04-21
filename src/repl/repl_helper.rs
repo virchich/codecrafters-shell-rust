@@ -1,6 +1,6 @@
 use crate::commands::validator::get_executable_commands;
 use crate::supported_envs::SupportedEnv;
-use rustyline::completion::{Candidate, Completer, Pair};
+use rustyline::completion::{Candidate, Completer, FilenameCompleter, Pair};
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
@@ -8,12 +8,41 @@ use rustyline::{Context, Helper};
 
 pub struct ReplHelper {
     external_executables: Vec<Pair>,
+    completer: FilenameCompleter,
+    built_ins: Vec<Pair>,
 }
 
 impl ReplHelper {
     pub(crate) fn new() -> Self {
         ReplHelper {
             external_executables: build_executables_list(),
+            completer: FilenameCompleter::new(),
+            built_ins: vec![
+                Pair {
+                    display: "exit".to_string(),
+                    replacement: "exit ".to_string(),
+                },
+                Pair {
+                    display: "echo".to_string(),
+                    replacement: "echo ".to_string(),
+                },
+                Pair {
+                    display: "cd".to_string(),
+                    replacement: "cd ".to_string(),
+                },
+                Pair {
+                    display: "exec".to_string(),
+                    replacement: "exec ".to_string(),
+                },
+                Pair {
+                    display: "pwd".to_string(),
+                    replacement: "pwd ".to_string(),
+                },
+                Pair {
+                    display: "history".to_string(),
+                    replacement: "history ".to_string(),
+                },
+            ],
         }
     }
 }
@@ -31,41 +60,20 @@ impl Completer for ReplHelper {
         &self,
         line: &str,
         pos: usize,
-        _: &Context<'_>,
+        ctx: &Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-        let build_ins = vec![
-            Pair {
-                display: "exit".to_string(),
-                replacement: "exit ".to_string(),
-            },
-            Pair {
-                display: "echo".to_string(),
-                replacement: "echo ".to_string(),
-            },
-            Pair {
-                display: "cd".to_string(),
-                replacement: "cd ".to_string(),
-            },
-            Pair {
-                display: "exec".to_string(),
-                replacement: "exec ".to_string(),
-            },
-            Pair {
-                display: "pwd".to_string(),
-                replacement: "pwd ".to_string(),
-            },
-            Pair {
-                display: "history".to_string(),
-                replacement: "history ".to_string(),
-            },
-        ];
+        if line[..pos].contains(' ') {
+            return self.completer.complete(line, pos, ctx);
+        }
 
-        let candidates: Vec<Pair> = build_ins
+        let candidates: Vec<Pair> = self
+            .built_ins
+            .clone()
             .into_iter()
             .chain(self.external_executables.clone().into_iter())
             .collect();
 
-        let start = line[..pos].rfind(' ').map_or(0, |i| i + 1);
+        let start = line[..pos].rfind(' ').map_or(0usize, |i| i + 1);
         let prefix = &line[start..pos];
 
         let matches: Vec<Pair> = candidates

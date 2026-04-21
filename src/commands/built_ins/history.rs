@@ -70,7 +70,7 @@ pub fn load_history_from_file(path: &str, stderr: &mut dyn Write) {
     }
 }
 
-fn write_history_to_file(path: &str, stderr: &mut dyn Write) {
+pub fn write_history_to_file(path: &str, stderr: &mut dyn Write) {
     let entries = history_store::get_all();
 
     match std::fs::write(path, entries.join("\n") + "\n") {

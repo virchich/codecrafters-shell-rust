@@ -1,10 +1,11 @@
 use crate::commands::built_ins::history::write_history_to_file;
 use crate::commands::command::Command;
+use crate::supported_envs::SupportedEnv;
 use std::env;
 use std::io::Write;
 
 pub fn exit(command: &Command, output: &mut dyn Write) {
-    match env::var("HISTFILE") {
+    match env::var(SupportedEnv::HISTFILE) {
         Ok(path) => {
             write_history_to_file(&path, output);
         }

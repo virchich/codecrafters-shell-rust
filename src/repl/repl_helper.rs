@@ -1,4 +1,5 @@
 use crate::commands::validator::get_executable_commands;
+use crate::supported_envs::SupportedEnv;
 use rustyline::completion::{Candidate, Completer, Pair};
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
@@ -77,7 +78,7 @@ impl Completer for ReplHelper {
 }
 
 fn build_executables_list() -> Vec<Pair> {
-    let executables: Vec<String> = match std::env::var("PATH") {
+    let executables: Vec<String> = match std::env::var(SupportedEnv::PATH) {
         Ok(path) => get_executable_commands(path),
         Err(_) => return Vec::new(),
     };

@@ -1,12 +1,13 @@
 use crate::commands::statement::{RedirectMode, RedirectStatement};
 use crate::commands::validator::is_command_executable;
+use crate::supported_envs::SupportedEnv;
 use std::env::var;
 use std::fs::File;
 use std::io;
 use std::io::Write;
 
 pub fn exec(statement: &RedirectStatement) {
-    match var("PATH") {
+    match var(SupportedEnv::PATH) {
         Ok(path) => {
             let (executable, _) = is_command_executable(&statement.command.command, path);
             if executable {

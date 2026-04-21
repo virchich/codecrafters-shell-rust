@@ -1,5 +1,6 @@
 use crate::commands::built_ins::history::load_history_from_file;
 use crate::repl::repl_helper::ReplHelper;
+use crate::supported_envs::SupportedEnv;
 use rustyline::config::BellStyle;
 use rustyline::history::DefaultHistory;
 use rustyline::{CompletionType, Config, Editor};
@@ -16,7 +17,7 @@ pub fn get_editor() -> Editor<ReplHelper, DefaultHistory> {
     let mut editor: Editor<ReplHelper, _> = Editor::with_config(config).unwrap();
     editor.set_helper(Some(ReplHelper::new()));
 
-    match env::var("HISTFILE") {
+    match env::var(SupportedEnv::HISTFILE) {
         Ok(path) => {
             load_history_from_file_on_startup(path.as_str(), &mut editor);
         }

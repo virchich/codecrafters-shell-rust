@@ -1,5 +1,6 @@
 use crate::commands::command::Command;
 use crate::commands::validator::{is_command_built_in, is_command_executable};
+use crate::supported_envs::SupportedEnv;
 use std::env::var;
 use std::io::Write;
 
@@ -16,7 +17,7 @@ pub fn type_of(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
         return;
     }
 
-    match var("PATH") {
+    match var(SupportedEnv::PATH) {
         Ok(path) => {
             let (executable, executable_path) = is_command_executable(&command_argument, path);
             if executable {

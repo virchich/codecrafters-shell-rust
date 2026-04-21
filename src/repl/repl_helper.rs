@@ -63,7 +63,22 @@ impl Completer for ReplHelper {
         ctx: &Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         if line[..pos].contains(' ') {
-            return self.completer.complete(line, pos, ctx);
+            let (start, candidates) = self.completer.complete(line, pos, ctx)?;
+            let candidates = candidates
+                .into_iter()
+                .map(|c| {
+                    let replacement = if c.replacement.ends_with('/') {
+                        c.replacement
+                    } else {
+                        format!("{} ", c.replacement)
+                    };
+                    Pair {
+                        display: c.display,
+                        replacement,
+                    }
+                })
+                .collect();
+            return Ok((start, candidates));
         }
 
         let candidates: Vec<Pair> = self

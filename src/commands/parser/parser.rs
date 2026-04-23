@@ -20,11 +20,19 @@ impl Parser {
             return None;
         }
 
-        Some(self.pipeline())
+        match self.pipeline() {
+            Ok(pipeline) => Some(pipeline),
+            Err(error) => {
+                eprintln!("Error parsing command: {}", error);
+
+                None
+            }
+        }
     }
 
-    fn pipeline(&mut self) -> Pipeline {
+    fn pipeline(&mut self) -> Result<Pipeline, String> {
         let mut segments: Vec<RedirectStatement> = Vec::new();
+        let mut is_background = false;
 
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
@@ -36,12 +44,25 @@ impl Parser {
                 && self.tokens[self.position].token_type == TokenType::Pipe
             {
                 self.position += 1; // move past the pipe token
+            } else if self.position < self.tokens.len()
+                && self.tokens[self.position].token_type == TokenType::Ampersand
+            {
+                self.position += 1;
+                is_background = true;
+
+                // If ampersand is not last throw an error. Eof is always last
+                if self.tokens[self.position].token_type != TokenType::Eof {
+                    return Err("Syntax error: '&' must be at the end of the command".to_string());
+                }
             } else {
                 break; // No more segments to parse
             }
         }
 
-        Pipeline { segments }
+        Ok(Pipeline {
+            segments,
+            is_background,
+        })
     }
 
     fn redirect_statement(&mut self) -> RedirectStatement {
@@ -52,6 +73,7 @@ impl Parser {
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
             && self.tokens[self.position].token_type != TokenType::Pipe
+            && self.tokens[self.position].token_type != TokenType::Ampersand
         {
             match self.tokens[self.position].token_type {
                 TokenType::Word => {
@@ -100,7 +122,7 @@ impl Parser {
                     }
                 }
                 _ => {
-                    // Skip tokens we don't handle yet (Pipe, Semicolon, etc.)
+                    // Skip tokens we don't handle yet
                     self.position += 1;
                 }
             }

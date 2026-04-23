@@ -2,6 +2,7 @@ use crate::commands::command::Command;
 
 pub struct Pipeline {
     pub(crate) segments: Vec<RedirectStatement>,
+    pub(crate) is_background: bool,
 }
 
 pub struct RedirectStatement {

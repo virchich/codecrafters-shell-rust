@@ -11,6 +11,10 @@ pub enum TokenType {
     RedirectAppend,       // >>
     RedirectStdErrAppend, // 2>
 
+    Ampersand, // &
+
+    And, // &&
+
     Eof, // end of input
 }
 

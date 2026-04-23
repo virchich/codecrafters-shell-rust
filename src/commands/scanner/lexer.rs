@@ -33,6 +33,14 @@ impl Lexer {
 
         match char {
             ' ' | '\r' | '\t' | '\n' => {} // Ignore whitespace
+            '&' => {
+                if self.peek() == '&' {
+                    self.add_token(TokenType::And, "&&".to_string());
+                    self.advance(); // consume the second '&'
+                } else {
+                    self.add_token(TokenType::Ampersand, String::from(char))
+                }
+            }
             '|' => self.add_token(TokenType::Pipe, String::from(char)),
             ';' => self.add_token(TokenType::Semicolon, String::from(char)),
             '<' => self.add_token(TokenType::RedirectIn, String::from(char)),

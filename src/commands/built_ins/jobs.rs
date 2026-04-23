@@ -1,6 +1,4 @@
 use crate::commands::command::Command;
-use std::fmt::Write;
+use std::io::Write;
 
-pub fn jobs(command: Command, writer: &mut dyn Write) {
-    todo!()
-}
+pub fn jobs(_command: &Command, _writer: &mut dyn Write) {}

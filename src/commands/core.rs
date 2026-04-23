@@ -3,6 +3,7 @@ use crate::commands::built_ins::echo::echo;
 use crate::commands::built_ins::exec::exec;
 use crate::commands::built_ins::exit::exit;
 use crate::commands::built_ins::history::history;
+use crate::commands::built_ins::jobs::jobs;
 use crate::commands::built_ins::pwd::pwd;
 use crate::commands::built_ins::type_of::type_of;
 use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
@@ -78,6 +79,7 @@ fn run_pipeline(pipeline: &Pipeline) {
                 "type" => type_of(&segment.command, &mut *writer, &mut *stderr_writer),
                 "pwd" => pwd(&segment.command, &mut *writer, &mut *stderr_writer),
                 "cd" => cd(&segment.command, &mut *stderr_writer),
+                "jobs" => jobs(&segment.command, &mut *writer),
                 _ => {}
             }
 
@@ -177,6 +179,7 @@ pub fn run_redirect(redirect_statement: &RedirectStatement) {
             &mut *stderr_writer,
         ),
         "cd" => cd(&redirect_statement.command, &mut *stderr_writer),
+        "jobs" => jobs(&redirect_statement.command, &mut *stdout_writer),
         _ => exec(&redirect_statement),
     }
 }

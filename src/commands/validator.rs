@@ -9,6 +9,7 @@ pub fn is_command_built_in(command: &String) -> bool {
         "echo".to_string(),
         "type".to_string(),
         "pwd".to_string(),
+        "jobs".to_string(),
     ];
 
     built_in_commands.contains(command)

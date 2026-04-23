@@ -5,3 +5,4 @@ pub mod exec;
 pub mod pwd;
 pub mod cd;
 pub mod history;
+pub mod jobs;

@@ -15,16 +15,39 @@ fn get_store() -> &'static Mutex<Vec<Job>> {
 }
 
 pub fn push(child: Child, command: String) -> (usize, u32) {
-    let pid = child.id();
     let mut guard = get_store().lock().unwrap();
+
+    let pid = child.id();
     let id = guard.len() + 1;
+
     guard.push(Job {
         id,
         pid,
         command,
         child,
     });
+
     (id, pid)
+}
+
+pub fn push_pipeline(children: Vec<Child>, command: String) -> (usize, Vec<u32>) {
+    let mut guard = get_store().lock().unwrap();
+
+    let id = guard.len() + 1;
+    let mut pids = Vec::new();
+
+    for child in children {
+        pids.push(child.id());
+
+        guard.push(Job {
+            id,
+            pid: child.id(),
+            command: command.clone(),
+            child,
+        });
+    }
+
+    (id, pids)
 }
 
 pub fn snapshot() -> Vec<(usize, u32, String)> {

@@ -6,33 +6,18 @@ use crate::commands::built_ins::history::history;
 use crate::commands::built_ins::jobs::jobs;
 use crate::commands::built_ins::pwd::pwd;
 use crate::commands::built_ins::type_of::type_of;
-use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
+use crate::commands::statement::{Pipeline, RedirectStatement};
+use crate::commands::utils::open_redirect;
 use crate::commands::validator::is_command_built_in;
-use std::fs::File;
+use crate::repl::jobs_store;
 use std::io;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 
-fn open_redirect(redirect: &Redirect) -> File {
-    match redirect.redirect_mode {
-        RedirectMode::Append => File::options()
-            .create(true)
-            .append(true)
-            .open(&redirect.file_location)
-            .unwrap(),
-        RedirectMode::Overwrite => File::options()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(&redirect.file_location)
-            .unwrap(),
-    }
-}
-
 pub fn run_statement(pipeline: &Pipeline) {
     if pipeline.segments.len() == 1 {
         // Single command — use existing logic (supports builtins + redirects)
-        run_redirect(&pipeline.segments[0]);
+        run_redirect(&pipeline.segments[0], pipeline.is_background);
         return;
     }
 
@@ -144,13 +129,35 @@ fn run_pipeline(pipeline: &Pipeline) {
         }
     }
 
-    // Wait for all external children to finish
-    for child in children.iter_mut() {
-        child.wait().unwrap();
+    if pipeline.is_background {
+        let command_str = pipeline
+            .segments
+            .iter()
+            .map(|s| {
+                std::iter::once(s.command.command.clone())
+                    .chain(s.command.arguments.iter().cloned())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join(" | ");
+
+        let (id, pids) = jobs_store::push_pipeline(children, command_str);
+        let pids_str = pids
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        println!("[{}] {}", id, pids_str);
+    } else {
+        // Wait for all external children to finish
+        for child in children.iter_mut() {
+            child.wait().unwrap();
+        }
     }
 }
 
-pub fn run_redirect(redirect_statement: &RedirectStatement) {
+pub fn run_redirect(redirect_statement: &RedirectStatement, run_in_background: bool) {
     let mut stdout_writer: Box<dyn Write> =
         if let Some(redirect) = &redirect_statement.redirect_std_out {
             Box::new(open_redirect(redirect))
@@ -180,7 +187,7 @@ pub fn run_redirect(redirect_statement: &RedirectStatement) {
         ),
         "cd" => cd(&redirect_statement.command, &mut *stderr_writer),
         "jobs" => jobs(&redirect_statement.command, &mut *stdout_writer),
-        _ => exec(&redirect_statement),
+        _ => exec(&redirect_statement, run_in_background),
     }
 }
 

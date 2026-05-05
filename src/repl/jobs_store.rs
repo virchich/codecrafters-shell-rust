@@ -3,7 +3,7 @@ use std::sync::{Mutex, OnceLock};
 
 pub struct Job {
     pub id: usize,
-    pub pid: u32,
+    pub _pid: u32,
     pub command: String,
     pub child: Child,
 }
@@ -24,11 +24,11 @@ pub fn push(child: Child, command: String) -> (usize, u32) {
     let mut guard = get_store().lock().unwrap();
 
     let pid = child.id();
-    let id = guard.len() + 1;
+    let id = next_id(&guard);
 
     guard.push(Job {
         id,
-        pid,
+        _pid: pid,
         command,
         child,
     });
@@ -39,7 +39,7 @@ pub fn push(child: Child, command: String) -> (usize, u32) {
 pub fn push_pipeline(children: Vec<Child>, command: String) -> (usize, Vec<u32>) {
     let mut guard = get_store().lock().unwrap();
 
-    let id = guard.len() + 1;
+    let id = next_id(&guard);
     let mut pids = Vec::new();
 
     for child in children {
@@ -47,7 +47,7 @@ pub fn push_pipeline(children: Vec<Child>, command: String) -> (usize, Vec<u32>)
 
         guard.push(Job {
             id,
-            pid: child.id(),
+            _pid: child.id(),
             command: command.clone(),
             child,
         });
@@ -56,19 +56,27 @@ pub fn push_pipeline(children: Vec<Child>, command: String) -> (usize, Vec<u32>)
     (id, pids)
 }
 
-pub fn snapshot() -> Vec<JobStatus> {
-    get_store()
-        .lock()
-        .unwrap()
-        .iter_mut()
-        .map(|j| JobStatus {
+fn next_id(jobs: &[Job]) -> usize {
+    jobs.iter().map(|j| j.id).max().unwrap_or(0) + 1
+}
+
+pub fn list_and_reap() -> Vec<JobStatus> {
+    let mut guard = get_store().lock().unwrap();
+    let mut result = Vec::new();
+
+    guard.retain_mut(|j| {
+        let (status, keep) = match j.child.try_wait() {
+            Ok(Some(_)) => ("Done", false),
+            Ok(None) => ("Running", true),
+            Err(_) => ("Error", false),
+        };
+        result.push(JobStatus {
             id: j.id,
             command: j.command.clone(),
-            status: match j.child.try_wait() {
-                Ok(Some(_)) => "Done".to_string(),
-                Ok(None) => "Running".to_string(),
-                Err(_) => "Error".to_string(),
-            },
-        })
-        .collect()
+            status: status.to_string(),
+        });
+        keep
+    });
+
+    result
 }

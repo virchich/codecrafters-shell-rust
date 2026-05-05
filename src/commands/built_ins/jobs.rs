@@ -3,7 +3,7 @@ use crate::repl::jobs_store;
 use std::io::Write;
 
 pub fn jobs(_command: &Command, writer: &mut dyn Write) {
-    let jobs_snapshot = jobs_store::snapshot();
+    let jobs_snapshot = jobs_store::list_and_reap();
 
     for (i, job) in jobs_snapshot.iter().enumerate() {
         let last_background_job = i + 1 == jobs_snapshot.len();

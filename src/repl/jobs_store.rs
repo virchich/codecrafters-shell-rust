@@ -8,6 +8,12 @@ pub struct Job {
     pub child: Child,
 }
 
+pub struct JobStatus {
+    pub id: usize,
+    pub command: String,
+    pub status: String,
+}
+
 static JOBS: OnceLock<Mutex<Vec<Job>>> = OnceLock::new();
 
 fn get_store() -> &'static Mutex<Vec<Job>> {
@@ -50,11 +56,19 @@ pub fn push_pipeline(children: Vec<Child>, command: String) -> (usize, Vec<u32>)
     (id, pids)
 }
 
-pub fn snapshot() -> Vec<(usize, u32, String)> {
+pub fn snapshot() -> Vec<JobStatus> {
     get_store()
         .lock()
         .unwrap()
-        .iter()
-        .map(|j| (j.id, j.pid, j.command.clone()))
+        .iter_mut()
+        .map(|j| JobStatus {
+            id: j.id,
+            command: j.command.clone(),
+            status: match j.child.try_wait() {
+                Ok(Some(_)) => "Done".to_string(),
+                Ok(None) => "Running".to_string(),
+                Err(_) => "Error".to_string(),
+            },
+        })
         .collect()
 }

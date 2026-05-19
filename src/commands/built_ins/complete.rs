@@ -9,7 +9,7 @@ pub fn complete(command: &Command, _writer_out: &mut dyn Write, writer_err: &mut
                     writeln!(writer_err, "complete: -p: command argument required").unwrap();
                     return;
                 }
-                writeln!(writer_err, "complete: {}: no complete specification", command.arguments[1]).unwrap();
+                writeln!(writer_err, "complete: {}: no completion specification", command.arguments[1]).unwrap();
             }
             arg => {
                 writeln!(writer_err, "complete: unknown argument: {}", arg).unwrap();

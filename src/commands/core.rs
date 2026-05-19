@@ -1,4 +1,5 @@
 use crate::commands::built_ins::cd::cd;
+use crate::commands::built_ins::complete::complete;
 use crate::commands::built_ins::echo::echo;
 use crate::commands::built_ins::exec::exec;
 use crate::commands::built_ins::exit::exit;
@@ -65,6 +66,7 @@ fn run_pipeline(pipeline: &Pipeline) {
                 "pwd" => pwd(&segment.command, &mut *writer, &mut *stderr_writer),
                 "cd" => cd(&segment.command, &mut *stderr_writer),
                 "jobs" => jobs(&segment.command, &mut *writer),
+                "complete" => complete(&segment.command, &mut *writer, &mut *stderr_writer),
                 _ => {}
             }
 
@@ -187,6 +189,11 @@ pub fn run_redirect(redirect_statement: &RedirectStatement, run_in_background: b
         ),
         "cd" => cd(&redirect_statement.command, &mut *stderr_writer),
         "jobs" => jobs(&redirect_statement.command, &mut *stdout_writer),
+        "complete" => complete(
+            &redirect_statement.command,
+            &mut *stdout_writer,
+            &mut stderr_writer,
+        ),
         _ => exec(&redirect_statement, run_in_background),
     }
 }

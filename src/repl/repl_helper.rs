@@ -1,10 +1,12 @@
 use crate::commands::validator::get_executable_commands;
+use crate::repl::complete_store;
 use crate::supported_envs::SupportedEnv;
 use rustyline::completion::{Candidate, Completer, FilenameCompleter, Pair};
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
+use std::process::Command;
 
 pub struct ReplHelper {
     external_executables: Vec<Pair>,
@@ -63,6 +65,34 @@ impl Completer for ReplHelper {
         ctx: &Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         if line[..pos].contains(' ') {
+            let line_before_cursor = &line[..pos];
+            let mut tokens = line_before_cursor.split_whitespace();
+
+            if let Some(command_name) = tokens.next() {
+                if let Some(record) = complete_store::get_all()
+                    .into_iter()
+                    .find(|record| record.command == command_name)
+                {
+                    if let Ok(output) = Command::new(record.path).output() {
+                        if let Ok(stdout) = String::from_utf8(output.stdout) {
+                            let candidates: Vec<Pair> = stdout
+                                .lines()
+                                .filter(|line| !line.is_empty())
+                                .map(|line| Pair {
+                                    display: line.to_string(),
+                                    replacement: format!("{} ", line),
+                                })
+                                .collect();
+
+                            if !candidates.is_empty() {
+                                let start = line_before_cursor.rfind(' ').map_or(0usize, |i| i + 1);
+                                return Ok((start, candidates));
+                            }
+                        }
+                    }
+                }
+            }
+
             let (start, candidates) = self.completer.complete(line, pos, ctx)?;
             let mut candidates: Vec<Pair> = candidates
                 .into_iter()

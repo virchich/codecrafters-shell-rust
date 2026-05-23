@@ -8,6 +8,7 @@ use crate::commands::built_ins::history::history;
 use crate::commands::built_ins::jobs::jobs;
 use crate::commands::built_ins::pwd::pwd;
 use crate::commands::built_ins::type_of::type_of;
+use crate::commands::command_args_expansion::command_args_expansion;
 use crate::commands::statement::{Pipeline, RedirectStatement};
 use crate::commands::utils::open_redirect;
 use crate::commands::validator::is_command_built_in;
@@ -16,7 +17,9 @@ use std::io;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 
-pub fn run_statement(pipeline: &Pipeline) {
+pub fn run_statement(pipeline: &mut Pipeline) {
+    command_args_expansion(pipeline);
+
     if pipeline.segments.len() == 1 {
         // Single command — use existing logic (supports builtins + redirects)
         run_redirect(&pipeline.segments[0], pipeline.is_background);

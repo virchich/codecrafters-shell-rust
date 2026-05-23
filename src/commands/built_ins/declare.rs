@@ -12,7 +12,7 @@ pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
                     return;
                 }
 
-                let optional_value_in_store = declare_store::get(command.arguments[1].to_string());
+                let optional_value_in_store = declare_store::get(command.arguments[1].as_str());
 
                 if let Some(variable_value) = optional_value_in_store {
                     writeln!(

@@ -7,9 +7,9 @@ fn get_store() -> &'static Mutex<HashMap<String, String>> {
     DECLARE_STORE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-pub fn get(variable: String) -> Option<String> {
+pub fn get(variable: &str) -> Option<String> {
     let guard = get_store().lock().unwrap();
-    guard.get(&variable).cloned()
+    guard.get(variable).cloned()
 }
 
 pub fn add(variable: String, value: String) {

@@ -6,3 +6,4 @@ pub(crate) mod scanner;
 pub(crate) mod statement;
 pub(crate) mod parser;
 pub mod utils;
+pub mod command_args_expansion;

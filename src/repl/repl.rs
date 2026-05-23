@@ -27,8 +27,8 @@ pub fn repl() {
                 let statement = parser.parse();
 
                 match statement {
-                    Some(command) => {
-                        run_statement(&command);
+                    Some(mut command) => {
+                        run_statement(&mut command);
                     }
                     None => continue,
                 }

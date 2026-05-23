@@ -66,14 +66,44 @@ impl Completer for ReplHelper {
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         if line[..pos].contains(' ') {
             let line_before_cursor = &line[..pos];
-            let mut tokens = line_before_cursor.split_whitespace();
+            let tokens: Vec<&str> = line_before_cursor.split_whitespace().collect();
 
-            if let Some(command_name) = tokens.next() {
+            let command = tokens.first().copied();
+            let ends_with_space = line_before_cursor.ends_with(' ');
+            let start = if ends_with_space {
+                pos
+            } else {
+                line_before_cursor.rfind(' ').map_or(0usize, |i| i + 1)
+            };
+            let current_word = if ends_with_space {
+                ""
+            } else {
+                tokens.last().copied().unwrap_or("")
+            };
+            let previous_word = if ends_with_space {
+                tokens.last().copied().unwrap_or("")
+            } else {
+                tokens
+                    .len()
+                    .checked_sub(2)
+                    .and_then(|index| tokens.get(index))
+                    .copied()
+                    .unwrap_or("")
+            };
+
+            if let Some(command_name) = command {
                 if let Some(record) = complete_store::get_all()
                     .into_iter()
                     .find(|record| record.command == command_name)
                 {
-                    if let Ok(output) = Command::new(record.path).output() {
+                    if let Ok(output) = Command::new(record.path)
+                        .args(vec![
+                            record.command,
+                            current_word.to_string(),
+                            previous_word.to_string(),
+                        ])
+                        .output()
+                    {
                         if let Ok(stdout) = String::from_utf8(output.stdout) {
                             let candidates: Vec<Pair> = stdout
                                 .lines()
@@ -85,7 +115,6 @@ impl Completer for ReplHelper {
                                 .collect();
 
                             if !candidates.is_empty() {
-                                let start = line_before_cursor.rfind(' ').map_or(0usize, |i| i + 1);
                                 return Ok((start, candidates));
                             }
                         }

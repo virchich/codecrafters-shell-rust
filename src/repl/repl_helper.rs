@@ -6,6 +6,7 @@ use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
+use std::collections::HashMap;
 use std::process::Command;
 
 pub struct ReplHelper {
@@ -96,7 +97,16 @@ impl Completer for ReplHelper {
                     .into_iter()
                     .find(|record| record.command == command_name)
                 {
+                    let mut envs: HashMap<String, String> = HashMap::with_capacity(2);
+
+                    envs.insert(String::from("COMP_LINE"), line_before_cursor.to_string());
+                    envs.insert(
+                        String::from("COMP_POINT"),
+                        line_before_cursor.len().to_string(),
+                    );
+
                     if let Ok(output) = Command::new(record.path)
+                        .envs(envs)
                         .args(vec![
                             record.command,
                             current_word.to_string(),

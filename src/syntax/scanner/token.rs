@@ -1,4 +1,4 @@
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum TokenType {
     Word, // command names, arguments, unquoted text
 

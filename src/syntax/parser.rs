@@ -32,27 +32,27 @@ impl Parser {
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
         {
-            commands.push(self.command_invocation());
+            commands.push(self.command_invocation()?);
 
-            // If the next token is a pipe, skip it and continue parsing the next command.
-            if self.position < self.tokens.len()
-                && self.tokens[self.position].token_type == TokenType::Pipe
-            {
-                self.position += 1;
-            } else if self.position < self.tokens.len()
-                && self.tokens[self.position].token_type == TokenType::Ampersand
-            {
-                self.position += 1;
-                is_background = true;
-
-                // A background marker is only valid at the end of a pipeline.
-                if self.tokens[self.position].token_type != TokenType::Eof {
-                    return Err(SyntaxError::Parser(
-                        "Syntax error: '&' must be at the end of the command".to_string(),
-                    ));
+            match self.peek_token_type() {
+                TokenType::Pipe => {
+                    self.advance();
+                    if self.peek_token_type() == TokenType::Eof {
+                        return Err(parser_error("Syntax error: expected command after '|'"));
+                    }
                 }
-            } else {
-                break;
+                TokenType::Ampersand => {
+                    self.advance();
+                    is_background = true;
+
+                    if self.peek_token_type() != TokenType::Eof {
+                        return Err(parser_error(
+                            "Syntax error: '&' must be at the end of the command",
+                        ));
+                    }
+                }
+                TokenType::Eof => {}
+                _ => break,
             }
         }
 
@@ -62,7 +62,7 @@ impl Parser {
         })
     }
 
-    fn command_invocation(&mut self) -> CommandInvocation {
+    fn command_invocation(&mut self) -> Result<CommandInvocation, SyntaxError> {
         let mut words: Vec<String> = Vec::new();
         let mut stdout_redirection: Option<Redirection> = None;
         let mut stderr_redirection: Option<Redirection> = None;
@@ -78,6 +78,7 @@ impl Parser {
                     self.position += 1;
                 }
                 TokenType::RedirectOut | TokenType::RedirectAppend => {
+                    let redirection_token = self.tokens[self.position].lexeme.clone();
                     let mode = if self.tokens[self.position].token_type == TokenType::RedirectAppend
                     {
                         RedirectionMode::Append
@@ -86,18 +87,11 @@ impl Parser {
                     };
                     self.position += 1;
 
-                    // Next token should be the file path.
-                    if self.position < self.tokens.len()
-                        && self.tokens[self.position].token_type == TokenType::Word
-                    {
-                        stdout_redirection = Some(Redirection {
-                            mode,
-                            file_path: self.tokens[self.position].lexeme.clone(),
-                        });
-                        self.position += 1;
-                    }
+                    let file_path = self.consume_redirection_target(&redirection_token)?;
+                    stdout_redirection = Some(Redirection { mode, file_path });
                 }
                 TokenType::RedirectStdErr | TokenType::RedirectStdErrAppend => {
+                    let redirection_token = self.tokens[self.position].lexeme.clone();
                     let mode = if self.tokens[self.position].token_type
                         == TokenType::RedirectStdErrAppend
                     {
@@ -107,29 +101,84 @@ impl Parser {
                     };
                     self.position += 1;
 
-                    // Next token should be the file path.
-                    if self.position < self.tokens.len()
-                        && self.tokens[self.position].token_type == TokenType::Word
-                    {
-                        stderr_redirection = Some(Redirection {
-                            mode,
-                            file_path: self.tokens[self.position].lexeme.clone(),
-                        });
-                        self.position += 1;
-                    }
+                    let file_path = self.consume_redirection_target(&redirection_token)?;
+                    stderr_redirection = Some(Redirection { mode, file_path });
                 }
-                _ => {
-                    // Skip tokens we don't handle yet.
-                    self.position += 1;
+                TokenType::And => {
+                    return Err(parser_error("Syntax error: unsupported operator '&&'"));
+                }
+                TokenType::Semicolon => {
+                    return Err(parser_error("Syntax error: unsupported operator ';'"));
+                }
+                TokenType::RedirectIn => {
+                    return Err(parser_error("Syntax error: unsupported redirection '<'"));
+                }
+                token_type => {
+                    return Err(parser_error(format!(
+                        "Syntax error: unexpected token '{}'",
+                        display_token(token_type)
+                    )));
                 }
             }
         }
 
-        CommandInvocation {
+        if words.is_empty() {
+            return Err(parser_error("Syntax error: expected command"));
+        }
+
+        Ok(CommandInvocation {
             name: words.first().cloned().unwrap_or_default(),
             arguments: words[1..].to_vec(),
             stdout_redirection,
             stderr_redirection,
+        })
+    }
+
+    fn consume_redirection_target(
+        &mut self,
+        redirection_token: &str,
+    ) -> Result<String, SyntaxError> {
+        if self.peek_token_type() != TokenType::Word {
+            return Err(parser_error(format!(
+                "Syntax error: expected file after '{}'",
+                redirection_token
+            )));
         }
+
+        let file_path = self.tokens[self.position].lexeme.clone();
+        self.advance();
+
+        Ok(file_path)
+    }
+
+    fn peek_token_type(&self) -> TokenType {
+        self.tokens
+            .get(self.position)
+            .map(|token| token.token_type)
+            .unwrap_or(TokenType::Eof)
+    }
+
+    fn advance(&mut self) {
+        self.position += 1;
+    }
+}
+
+fn parser_error(message: impl Into<String>) -> SyntaxError {
+    SyntaxError::Parser(message.into())
+}
+
+fn display_token(token_type: TokenType) -> &'static str {
+    match token_type {
+        TokenType::Word => "word",
+        TokenType::Pipe => "|",
+        TokenType::Semicolon => ";",
+        TokenType::RedirectIn => "<",
+        TokenType::RedirectOut => ">",
+        TokenType::RedirectStdErr => "2>",
+        TokenType::RedirectAppend => ">>",
+        TokenType::RedirectStdErrAppend => "2>>",
+        TokenType::Ampersand => "&",
+        TokenType::And => "&&",
+        TokenType::Eof => "end of input",
     }
 }

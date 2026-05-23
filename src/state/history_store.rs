@@ -1,4 +1,4 @@
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 static HISTORY: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
 
@@ -18,7 +18,7 @@ pub fn get_all() -> Vec<String> {
 static TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[cfg(test)]
-pub(crate) fn test_lock() -> MutexGuard<'static, ()> {
+pub(crate) fn test_lock() -> std::sync::MutexGuard<'static, ()> {
     TEST_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
 }
 

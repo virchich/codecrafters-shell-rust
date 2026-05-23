@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 static DECLARE_STORE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 
@@ -21,7 +21,7 @@ pub fn add(variable: String, value: String) {
 static TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[cfg(test)]
-pub(crate) fn test_lock() -> MutexGuard<'static, ()> {
+pub(crate) fn test_lock() -> std::sync::MutexGuard<'static, ()> {
     TEST_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
 }
 

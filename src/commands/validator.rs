@@ -11,6 +11,7 @@ pub fn is_command_built_in(command: &String) -> bool {
         "pwd".to_string(),
         "jobs".to_string(),
         "complete".to_string(),
+        "declare".to_string(),
     ];
 
     built_in_commands.contains(command)

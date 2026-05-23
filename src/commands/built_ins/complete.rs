@@ -30,6 +30,14 @@ pub fn complete(command: &Command, writer_out: &mut dyn Write, writer_err: &mut 
 
                 writeln!(writer_err, "complete: {}: no completion specification", completion_command).unwrap();
             }
+            "-r" => {
+                if command.arguments.len() < 2 {
+                    writeln!(writer_err, "complete: -r: command argument required").unwrap();
+                    return;
+                }
+
+                complete_store::remove(command.arguments[1].clone());
+            }
             arg => {
                 writeln!(writer_err, "complete: unknown argument: {}", arg).unwrap();
             }

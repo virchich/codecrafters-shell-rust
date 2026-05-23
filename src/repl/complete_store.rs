@@ -21,6 +21,12 @@ pub fn push(path: String, command: String) {
     });
 }
 
+pub fn remove(command: String) {
+    let mut guard = get_store().lock().unwrap();
+
+    guard.retain(|record| record.command != command);
+}
+
 pub fn get_all() -> Vec<CompletionRecord> {
     let guard = get_store().lock().unwrap();
 

@@ -1,35 +1,64 @@
 [![progress-banner](https://backend.codecrafters.io/progress/shell/f3ef174c-adbf-4ef3-a1f4-998bca854a03)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for Rust solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+# rust-shell
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+A POSIX-style shell implemented in Rust as a learning project through the CodeCrafters shell challenge.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## What this project demonstrates
 
-# Passing the first stage
+- Lexing and parsing shell input into pipelines and command invocations
+- Execution of built-in commands and external programs
+- Output/error redirection and pipeline composition
+- Background job tracking
+- Simple shell state management for history, variable declaration, and completion records
+- A REPL built on `rustyline`
 
-The entry point for your `shell` implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+## Implemented shell behavior
+
+- Built-ins: `cd`, `pwd`, `echo`, `type`, `exit`, `history`, `jobs`, `declare`, `complete`
+- Pipelines with `|`
+- Background execution with `&`
+- Redirection: `>`, `>>`, `2>`, `2>>`
+- Basic argument parsing with quotes and escapes
+- Variable expansion for declared values
+
+## Technical notes
+
+- Language: Rust
+- Edition: 2021
+- Primary dependencies: `rustyline`, `regex`
+- Structure:
+    - `src/syntax`: lexer, tokens, parser
+    - `src/commands`: built-ins, expansion, execution, redirection, command resolution
+    - `src/state`: in-memory stores for history, jobs, declarations, completions
+    - `src/repl`: interactive shell session
+
+## Test coverage
+
+The unit test suite focuses on the parts most likely to cause behavioral regressions:
+
+- lexical scanning
+- parsing
+- argument expansion
+- redirection and executable resolution
+- state stores
+- selected built-ins with meaningful logic
+
+Current project-source coverage is above 60%.
+
+## Running locally
 
 ```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+./your_program.sh
 ```
 
-Time to move on to the next stage!
+Run tests with:
 
-# Stage 2 & beyond
+```sh
+cargo test
+```
 
-Note: This section is for stages 2 and beyond.
+## Why this repo exists
 
-1. Ensure you have `cargo (1.87)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+This is not intended to be a production shell. It is a systems programming exercise focused on parser design, process
+orchestration, and building a clean command execution flow in Rust.

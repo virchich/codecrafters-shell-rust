@@ -1,6 +1,6 @@
-use crate::commands::built_ins::exec::exec;
 use crate::commands::built_ins::registry;
 use crate::commands::expansion::expand_pipeline;
+use crate::commands::external::execute_external_command;
 use crate::commands::redirection::open_redirection;
 use crate::state::jobs_store;
 use crate::syntax::command_invocation::CommandInvocation;
@@ -132,7 +132,7 @@ pub fn execute_command_invocation(command_invocation: &CommandInvocation, run_in
     let mut stderr_writer = stderr_writer_for(command_invocation);
 
     if !registry::execute(command_invocation, &mut *stdout_writer, &mut *stderr_writer) {
-        exec(command_invocation, run_in_background);
+        execute_external_command(command_invocation, run_in_background);
     }
 }
 

@@ -6,7 +6,7 @@ use crate::syntax::command_invocation::CommandInvocation;
 use std::env::var;
 use std::process::Stdio;
 
-pub fn exec(command_invocation: &CommandInvocation, run_in_background: bool) {
+pub fn execute_external_command(command_invocation: &CommandInvocation, run_in_background: bool) {
     match var(SupportedEnv::PATH) {
         Ok(path) => {
             let (executable, _) = is_command_executable(&command_invocation.name, path);

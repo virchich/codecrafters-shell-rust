@@ -2,7 +2,6 @@ pub mod cd;
 pub mod complete;
 pub mod declare;
 pub mod echo;
-pub mod exec;
 pub mod exit;
 pub mod history;
 pub mod jobs;

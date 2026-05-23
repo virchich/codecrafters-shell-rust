@@ -1,5 +1,6 @@
 use crate::commands::command::Command;
 use crate::repl::declare_store;
+use regex::Regex;
 use std::io::Write;
 
 pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
@@ -33,7 +34,16 @@ pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
                     return;
                 }
 
-                declare_store::add(declare_argument[0].to_string(), declare_argument[1].to_string());
+                let variable_name = declare_argument[0];
+                let variable_value = declare_argument[1];
+
+                let re = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
+
+                if re.is_match(variable_name) {
+                    declare_store::add(variable_name.to_string(), variable_value.to_string());
+                } else {
+                    writeln!(writer_err, "declare: `{}': not a valid identifier", arg).unwrap();
+                }
             }
         }
     } else {

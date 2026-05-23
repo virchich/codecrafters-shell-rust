@@ -2,7 +2,7 @@ use crate::state::jobs_store;
 use crate::syntax::command_invocation::CommandInvocation;
 use std::io::Write;
 
-pub fn jobs(_command: &CommandInvocation, writer: &mut dyn Write) {
+pub fn jobs(_command: &CommandInvocation, writer: &mut dyn Write, _writer_err: &mut dyn Write) {
     let jobs_snapshot = jobs_store::list_and_reap();
 
     for (i, job) in jobs_snapshot.iter().enumerate() {

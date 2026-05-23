@@ -4,9 +4,9 @@ use crate::syntax::command_invocation::CommandInvocation;
 use std::env;
 use std::io::Write;
 
-pub fn exit(command: &CommandInvocation, output: &mut dyn Write) {
+pub fn exit(command: &CommandInvocation, _writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
     if let Ok(path) = env::var(SupportedEnv::HISTFILE) {
-        write_history_to_file(&path, output);
+        write_history_to_file(&path, writer_err);
     }
 
     if command.arguments.is_empty() {
@@ -16,7 +16,7 @@ pub fn exit(command: &CommandInvocation, output: &mut dyn Write) {
     match command.arguments[0].parse::<i32>() {
         Ok(code) => std::process::exit(code),
         Err(_) => {
-            output
+            writer_err
                 .write_all(
                     format!("exit: {}: numeric argument required", command.arguments[0]).as_bytes(),
                 )

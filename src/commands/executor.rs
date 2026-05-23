@@ -1,16 +1,7 @@
-use crate::commands::built_ins::cd::cd;
-use crate::commands::built_ins::complete::complete;
-use crate::commands::built_ins::declare::declare;
-use crate::commands::built_ins::echo::echo;
 use crate::commands::built_ins::exec::exec;
-use crate::commands::built_ins::exit::exit;
-use crate::commands::built_ins::history::history;
-use crate::commands::built_ins::jobs::jobs;
-use crate::commands::built_ins::pwd::pwd;
-use crate::commands::built_ins::type_of::type_of;
+use crate::commands::built_ins::registry;
 use crate::commands::expansion::expand_pipeline;
 use crate::commands::redirection::open_redirection;
-use crate::commands::validator::is_command_built_in;
 use crate::state::jobs_store;
 use crate::syntax::command_invocation::CommandInvocation;
 use crate::syntax::pipeline::Pipeline;
@@ -38,7 +29,7 @@ fn execute_pipeline_commands(pipeline: &Pipeline) {
     for (i, command_invocation) in pipeline.commands.iter().enumerate() {
         let is_last = i == command_count - 1;
 
-        if is_command_built_in(&command_invocation.name) {
+        if registry::is_builtin(&command_invocation.name) {
             let mut buffer: Vec<u8> = Vec::new();
 
             let mut stdout_writer: Box<dyn Write> = if is_last {
@@ -53,20 +44,7 @@ fn execute_pipeline_commands(pipeline: &Pipeline) {
 
             let mut stderr_writer = stderr_writer_for(command_invocation);
 
-            match command_invocation.name.as_str() {
-                "history" => history(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-                "exit" => exit(command_invocation, &mut *stderr_writer),
-                "echo" => echo(command_invocation, &mut *stdout_writer),
-                "type" => type_of(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-                "pwd" => pwd(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-                "cd" => cd(command_invocation, &mut *stderr_writer),
-                "jobs" => jobs(command_invocation, &mut *stdout_writer),
-                "complete" => {
-                    complete(command_invocation, &mut *stdout_writer, &mut *stderr_writer)
-                }
-                "declare" => declare(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-                _ => {}
-            }
+            registry::execute(command_invocation, &mut *stdout_writer, &mut *stderr_writer);
 
             drop(stdout_writer);
 
@@ -153,17 +131,8 @@ pub fn execute_command_invocation(command_invocation: &CommandInvocation, run_in
 
     let mut stderr_writer = stderr_writer_for(command_invocation);
 
-    match command_invocation.name.as_str() {
-        "history" => history(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-        "exit" => exit(command_invocation, &mut *stderr_writer),
-        "echo" => echo(command_invocation, &mut *stdout_writer),
-        "type" => type_of(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-        "pwd" => pwd(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-        "cd" => cd(command_invocation, &mut *stderr_writer),
-        "jobs" => jobs(command_invocation, &mut *stdout_writer),
-        "complete" => complete(command_invocation, &mut *stdout_writer, &mut stderr_writer),
-        "declare" => declare(command_invocation, &mut *stdout_writer, &mut *stderr_writer),
-        _ => exec(command_invocation, run_in_background),
+    if !registry::execute(command_invocation, &mut *stdout_writer, &mut *stderr_writer) {
+        exec(command_invocation, run_in_background);
     }
 }
 

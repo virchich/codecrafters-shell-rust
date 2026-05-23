@@ -2,21 +2,6 @@ use std::env::split_paths;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-pub fn is_command_built_in(command: &String) -> bool {
-    let built_in_commands = [
-        "history".to_string(),
-        "exit".to_string(),
-        "echo".to_string(),
-        "type".to_string(),
-        "pwd".to_string(),
-        "jobs".to_string(),
-        "complete".to_string(),
-        "declare".to_string(),
-    ];
-
-    built_in_commands.contains(command)
-}
-
 pub fn is_command_executable(command: &String, paths: String) -> (bool, String) {
     for cmd in get_executable_commands(paths) {
         if cmd.ends_with(format!("/{}", command).as_str()) {

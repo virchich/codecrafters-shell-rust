@@ -1,0 +1,82 @@
+use crate::commands::built_ins::cd::cd;
+use crate::commands::built_ins::complete::complete;
+use crate::commands::built_ins::declare::declare;
+use crate::commands::built_ins::echo::echo;
+use crate::commands::built_ins::exit::exit;
+use crate::commands::built_ins::history::history;
+use crate::commands::built_ins::jobs::jobs;
+use crate::commands::built_ins::pwd::pwd;
+use crate::commands::built_ins::type_of::type_of;
+use crate::syntax::command_invocation::CommandInvocation;
+use std::io::Write;
+
+type BuiltinHandler = fn(&CommandInvocation, &mut dyn Write, &mut dyn Write);
+
+struct Builtin {
+    name: &'static str,
+    handler: BuiltinHandler,
+}
+
+const BUILTINS: &[Builtin] = &[
+    Builtin {
+        name: "cd",
+        handler: cd,
+    },
+    Builtin {
+        name: "complete",
+        handler: complete,
+    },
+    Builtin {
+        name: "declare",
+        handler: declare,
+    },
+    Builtin {
+        name: "echo",
+        handler: echo,
+    },
+    Builtin {
+        name: "exit",
+        handler: exit,
+    },
+    Builtin {
+        name: "history",
+        handler: history,
+    },
+    Builtin {
+        name: "jobs",
+        handler: jobs,
+    },
+    Builtin {
+        name: "pwd",
+        handler: pwd,
+    },
+    Builtin {
+        name: "type",
+        handler: type_of,
+    },
+];
+
+pub fn names() -> impl Iterator<Item = &'static str> {
+    BUILTINS.iter().map(|builtin| builtin.name)
+}
+
+pub fn is_builtin(command_name: &str) -> bool {
+    find(command_name).is_some()
+}
+
+pub fn execute(
+    command: &CommandInvocation,
+    stdout: &mut dyn Write,
+    stderr: &mut dyn Write,
+) -> bool {
+    if let Some(builtin) = find(&command.name) {
+        (builtin.handler)(command, stdout, stderr);
+        true
+    } else {
+        false
+    }
+}
+
+fn find(command_name: &str) -> Option<&'static Builtin> {
+    BUILTINS.iter().find(|builtin| builtin.name == command_name)
+}

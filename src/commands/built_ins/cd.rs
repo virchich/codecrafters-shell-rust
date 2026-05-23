@@ -2,7 +2,7 @@ use crate::syntax::command_invocation::CommandInvocation;
 use std::env;
 use std::io::Write;
 
-pub fn cd(command: &CommandInvocation, writer_err: &mut dyn Write) {
+pub fn cd(command: &CommandInvocation, _writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
     let path = match command.arguments.first() {
         None => match env::var("HOME") {
             Ok(home_path) => home_path,

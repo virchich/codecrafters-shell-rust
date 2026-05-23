@@ -1,4 +1,5 @@
-use crate::commands::validator::{is_command_built_in, is_command_executable};
+use crate::commands::built_ins::registry::is_builtin;
+use crate::commands::validator::is_command_executable;
 use crate::supported_envs::SupportedEnv;
 use crate::syntax::command_invocation::CommandInvocation;
 use std::env::var;
@@ -16,7 +17,7 @@ pub fn type_of(
 
     let command_argument = command.arguments.first().unwrap();
 
-    if is_command_built_in(command_argument) {
+    if is_builtin(command_argument) {
         writeln!(writer_out, "{} is a shell builtin", command_argument).unwrap();
         return;
     }

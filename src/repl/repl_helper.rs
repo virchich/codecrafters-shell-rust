@@ -1,3 +1,4 @@
+use crate::commands::built_ins::registry;
 use crate::commands::validator::get_executable_commands;
 use crate::state::complete_store;
 use crate::supported_envs::SupportedEnv;
@@ -20,34 +21,18 @@ impl ReplHelper {
         ReplHelper {
             external_executables: build_executables_list(),
             completer: FilenameCompleter::new(),
-            built_ins: vec![
-                Pair {
-                    display: "exit".to_string(),
-                    replacement: "exit ".to_string(),
-                },
-                Pair {
-                    display: "echo".to_string(),
-                    replacement: "echo ".to_string(),
-                },
-                Pair {
-                    display: "cd".to_string(),
-                    replacement: "cd ".to_string(),
-                },
-                Pair {
-                    display: "exec".to_string(),
-                    replacement: "exec ".to_string(),
-                },
-                Pair {
-                    display: "pwd".to_string(),
-                    replacement: "pwd ".to_string(),
-                },
-                Pair {
-                    display: "history".to_string(),
-                    replacement: "history ".to_string(),
-                },
-            ],
+            built_ins: build_builtin_list(),
         }
     }
+}
+
+fn build_builtin_list() -> Vec<Pair> {
+    registry::names()
+        .map(|name| Pair {
+            display: name.to_string(),
+            replacement: format!("{} ", name),
+        })
+        .collect()
 }
 
 impl Helper for ReplHelper {}

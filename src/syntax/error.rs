@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug)]
 pub enum SyntaxError {
     Lexer(String),
     Parser(String),

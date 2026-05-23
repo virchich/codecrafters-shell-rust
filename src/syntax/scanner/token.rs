@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
     Word, // command names, arguments, unquoted text
 
@@ -18,6 +18,7 @@ pub enum TokenType {
     Eof, // end of input
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub(crate) token_type: TokenType,
     pub(crate) lexeme: String,

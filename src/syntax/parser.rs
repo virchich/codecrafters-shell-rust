@@ -1,4 +1,5 @@
 use crate::syntax::command_invocation::CommandInvocation;
+use crate::syntax::error::SyntaxError;
 use crate::syntax::pipeline::Pipeline;
 use crate::syntax::redirection::{Redirection, RedirectionMode};
 use crate::syntax::scanner::token::{Token, TokenType};
@@ -16,22 +17,15 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Option<Pipeline> {
+    pub fn parse(&mut self) -> Result<Option<Pipeline>, SyntaxError> {
         if self.tokens.is_empty() || self.tokens[0].token_type == TokenType::Eof {
-            return None;
+            return Ok(None);
         }
 
-        match self.pipeline() {
-            Ok(pipeline) => Some(pipeline),
-            Err(error) => {
-                eprintln!("Error parsing command: {}", error);
-
-                None
-            }
-        }
+        self.pipeline().map(Some)
     }
 
-    fn pipeline(&mut self) -> Result<Pipeline, String> {
+    fn pipeline(&mut self) -> Result<Pipeline, SyntaxError> {
         let mut commands: Vec<CommandInvocation> = Vec::new();
         let mut is_background = false;
 
@@ -53,7 +47,9 @@ impl Parser {
 
                 // A background marker is only valid at the end of a pipeline.
                 if self.tokens[self.position].token_type != TokenType::Eof {
-                    return Err("Syntax error: '&' must be at the end of the command".to_string());
+                    return Err(SyntaxError::Parser(
+                        "Syntax error: '&' must be at the end of the command".to_string(),
+                    ));
                 }
             } else {
                 break;

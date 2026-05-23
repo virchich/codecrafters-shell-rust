@@ -1,5 +1,5 @@
 use crate::commands::built_ins::registry;
-use crate::commands::validator::get_executable_commands;
+use crate::commands::resolver::executable_commands;
 use crate::state::complete_store;
 use crate::supported_envs::SupportedEnv;
 use rustyline::completion::{Candidate, Completer, FilenameCompleter, Pair};
@@ -163,7 +163,7 @@ impl Completer for ReplHelper {
 
 fn build_executables_list() -> Vec<Pair> {
     let executables: Vec<String> = match std::env::var(SupportedEnv::PATH) {
-        Ok(path) => get_executable_commands(path),
+        Ok(path) => executable_commands(&path),
         Err(_) => return Vec::new(),
     };
     let mut executables_pair_list: Vec<Pair> = Vec::new();

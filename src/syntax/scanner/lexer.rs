@@ -1,3 +1,4 @@
+use crate::syntax::error::SyntaxError;
 use crate::syntax::scanner::token::{Token, TokenType};
 
 pub struct Lexer {
@@ -15,9 +16,9 @@ impl Lexer {
         }
     }
 
-    pub fn scan_tokens(mut self) -> Vec<Token> {
+    pub fn scan_tokens(mut self) -> Result<Vec<Token>, SyntaxError> {
         while !self.is_at_end() {
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens.push(Token {
@@ -25,10 +26,10 @@ impl Lexer {
             lexeme: String::new(),
         });
 
-        self.tokens
+        Ok(self.tokens)
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), SyntaxError> {
         let char = self.advance();
 
         match char {
@@ -61,7 +62,7 @@ impl Lexer {
                     self.advance();
                     self.add_token(TokenType::RedirectOut, ">".to_string());
                 } else {
-                    self.scan_argument(char);
+                    self.scan_argument(char)?;
                 }
             }
             '2' => {
@@ -73,11 +74,13 @@ impl Lexer {
                     self.advance();
                     self.add_token(TokenType::RedirectStdErr, "2>".to_string());
                 } else {
-                    self.scan_argument(char);
+                    self.scan_argument(char)?;
                 }
             }
-            _ => self.scan_argument(char),
+            _ => self.scan_argument(char)?,
         }
+
+        Ok(())
     }
 
     fn add_token(&mut self, token_type: TokenType, lexeme: String) {
@@ -110,7 +113,7 @@ impl Lexer {
         }
     }
 
-    fn scan_argument(&mut self, first_char: char) {
+    fn scan_argument(&mut self, first_char: char) -> Result<(), SyntaxError> {
         let mut buffer = String::new();
 
         // The first character was already consumed by scan_token.
@@ -121,8 +124,8 @@ impl Lexer {
                     buffer.push(self.advance());
                 }
             }
-            '\'' => buffer.push_str(&self.scan_single_quote()),
-            '"' => buffer.push_str(&self.scan_double_quote()),
+            '\'' => buffer.push_str(&self.scan_single_quote()?),
+            '"' => buffer.push_str(&self.scan_double_quote()?),
             _ => buffer.push(first_char),
         }
 
@@ -137,11 +140,11 @@ impl Lexer {
                 }
                 '\'' => {
                     self.advance(); // consume the opening quote
-                    buffer.push_str(&self.scan_single_quote());
+                    buffer.push_str(&self.scan_single_quote()?);
                 }
                 '"' => {
                     self.advance(); // consume the opening quote
-                    buffer.push_str(&self.scan_double_quote());
+                    buffer.push_str(&self.scan_double_quote()?);
                 }
                 ' ' | '\r' | '\t' | '\n' | '|' | ';' | '<' | '>' => break,
                 _ => {
@@ -154,25 +157,26 @@ impl Lexer {
             token_type: TokenType::Word,
             lexeme: buffer,
         });
+
+        Ok(())
     }
 
-    fn scan_single_quote(&mut self) -> String {
+    fn scan_single_quote(&mut self) -> Result<String, SyntaxError> {
         let mut content = String::new();
 
         while !self.is_at_end() && self.peek() != '\'' {
             content.push(self.advance());
         }
         if self.is_at_end() {
-            eprintln!("Unterminated single quote");
-            return content;
+            return Err(SyntaxError::Lexer("Unterminated single quote".to_string()));
         }
 
         // Consume the closing quote.
         self.advance();
-        content
+        Ok(content)
     }
 
-    fn scan_double_quote(&mut self) -> String {
+    fn scan_double_quote(&mut self) -> Result<String, SyntaxError> {
         let mut content = String::new();
 
         while !self.is_at_end() && self.peek() != '"' {
@@ -188,12 +192,11 @@ impl Lexer {
             }
         }
         if self.is_at_end() {
-            eprintln!("Unterminated double quote");
-            return content;
+            return Err(SyntaxError::Lexer("Unterminated double quote".to_string()));
         }
 
         // Consume the closing quote.
         self.advance();
-        content
+        Ok(content)
     }
 }

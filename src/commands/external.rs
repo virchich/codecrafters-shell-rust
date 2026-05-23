@@ -1,5 +1,5 @@
 use crate::commands::redirection::open_redirection;
-use crate::commands::validator::is_command_executable;
+use crate::commands::resolver::resolve_executable;
 use crate::state::jobs_store;
 use crate::supported_envs::SupportedEnv;
 use crate::syntax::command_invocation::CommandInvocation;
@@ -9,8 +9,7 @@ use std::process::Stdio;
 pub fn execute_external_command(command_invocation: &CommandInvocation, run_in_background: bool) {
     match var(SupportedEnv::PATH) {
         Ok(path) => {
-            let (executable, _) = is_command_executable(&command_invocation.name, path);
-            if executable {
+            if resolve_executable(&command_invocation.name, &path).is_some() {
                 let mut command = std::process::Command::new(&command_invocation.name);
                 command.args(&command_invocation.arguments);
 

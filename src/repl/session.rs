@@ -20,16 +20,25 @@ pub fn run() {
                 history_store::push(line.clone());
 
                 let scanner = Lexer::new(line);
-                let tokens = scanner.scan_tokens();
+                let tokens = match scanner.scan_tokens() {
+                    Ok(tokens) => tokens,
+                    Err(error) => {
+                        eprintln!("{}", error);
+                        continue;
+                    }
+                };
 
                 let mut parser = Parser::new(tokens);
-                let pipeline = parser.parse();
-
-                match pipeline {
-                    Some(mut pipeline) => {
-                        execute_pipeline(&mut pipeline);
+                let pipeline = match parser.parse() {
+                    Ok(pipeline) => pipeline,
+                    Err(error) => {
+                        eprintln!("{}", error);
+                        continue;
                     }
-                    None => continue,
+                };
+
+                if let Some(mut pipeline) = pipeline {
+                    execute_pipeline(&mut pipeline);
                 }
             }
             Err(_) => continue,

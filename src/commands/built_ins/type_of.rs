@@ -1,5 +1,5 @@
 use crate::commands::built_ins::registry::is_builtin;
-use crate::commands::validator::is_command_executable;
+use crate::commands::resolver::resolve_executable;
 use crate::supported_envs::SupportedEnv;
 use crate::syntax::command_invocation::CommandInvocation;
 use std::env::var;
@@ -24,8 +24,7 @@ pub fn type_of(
 
     match var(SupportedEnv::PATH) {
         Ok(path) => {
-            let (executable, executable_path) = is_command_executable(command_argument, path);
-            if executable {
+            if let Some(executable_path) = resolve_executable(command_argument, &path) {
                 writeln!(writer_out, "{} is {}", command_argument, executable_path).unwrap();
             } else {
                 writeln!(writer_err, "{}: not found", command_argument).unwrap();

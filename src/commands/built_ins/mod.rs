@@ -1,10 +1,10 @@
-pub mod exit;
-pub mod echo;
-pub mod type_of;
-pub mod exec;
-pub mod pwd;
 pub mod cd;
-pub mod history;
-pub mod jobs;
 pub mod complete;
 pub mod declare;
+pub mod echo;
+pub mod exec;
+pub mod exit;
+pub mod history;
+pub mod jobs;
+pub mod pwd;
+pub mod type_of;

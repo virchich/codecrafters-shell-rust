@@ -161,7 +161,7 @@ impl Completer for ReplHelper {
             .built_ins
             .clone()
             .into_iter()
-            .chain(self.external_executables.clone().into_iter())
+            .chain(self.external_executables.clone())
             .collect();
 
         let start = line[..pos].rfind(' ').map_or(0usize, |i| i + 1);

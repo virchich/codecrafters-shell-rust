@@ -15,10 +15,7 @@ fn get_store() -> &'static Mutex<Vec<CompletionRecord>> {
 pub fn push(path: String, command: String) {
     let mut guard = get_store().lock().unwrap();
 
-    guard.push(CompletionRecord {
-        path,
-        command,
-    });
+    guard.push(CompletionRecord { path, command });
 }
 
 pub fn remove(command: String) {

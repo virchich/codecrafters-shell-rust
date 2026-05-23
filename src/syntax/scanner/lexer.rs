@@ -103,9 +103,7 @@ impl Lexer {
     }
 
     fn peek_next(&self) -> char {
-        if self.is_at_end() {
-            '\0'
-        } else if self.current + 1 >= self.source.len() {
+        if self.is_at_end() || self.current + 1 >= self.source.len() {
             '\0'
         } else {
             self.source[self.current + 1]

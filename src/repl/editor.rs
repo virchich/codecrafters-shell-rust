@@ -17,11 +17,8 @@ pub fn get_editor() -> Editor<ReplHelper, DefaultHistory> {
     let mut editor: Editor<ReplHelper, _> = Editor::with_config(config).unwrap();
     editor.set_helper(Some(ReplHelper::new()));
 
-    match env::var(SupportedEnv::HISTFILE) {
-        Ok(path) => {
-            load_history_from_file_on_startup(path.as_str(), &mut editor);
-        }
-        Err(_) => {}
+    if let Ok(path) = env::var(SupportedEnv::HISTFILE) {
+        load_history_from_file_on_startup(path.as_str(), &mut editor);
     }
 
     editor

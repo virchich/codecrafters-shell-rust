@@ -1,10 +1,14 @@
-use crate::commands::command::Command;
 use crate::state::declare_store;
+use crate::syntax::command_invocation::CommandInvocation;
 use regex::Regex;
 use std::io::Write;
 
-pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
-    if command.arguments.len() > 0 {
+pub fn declare(
+    command: &CommandInvocation,
+    writer_out: &mut dyn Write,
+    writer_err: &mut dyn Write,
+) {
+    if !command.arguments.is_empty() {
         match command.arguments[0].as_str() {
             "-p" => {
                 if command.arguments.len() < 2 {
@@ -18,10 +22,9 @@ pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
                     writeln!(
                         writer_out,
                         "declare -- {}=\"{}\"",
-                        command.arguments[1].to_string(),
-                        variable_value
+                        command.arguments[1], variable_value
                     )
-                        .unwrap();
+                    .unwrap();
                 } else {
                     writeln!(writer_err, "declare: {}: not found", command.arguments[1]).unwrap();
                 }
@@ -30,7 +33,11 @@ pub fn declare(command: &Command, writer_out: &mut dyn Write, writer_err: &mut d
                 let declare_argument = arg.split("=").collect::<Vec<&str>>();
 
                 if declare_argument.len() < 2 {
-                    writeln!(writer_err, "declare: declaration requires two arguments: <VARIABLE>=<VALUE>").unwrap();
+                    writeln!(
+                        writer_err,
+                        "declare: declaration requires two arguments: <VARIABLE>=<VALUE>"
+                    )
+                    .unwrap();
                     return;
                 }
 

@@ -1,15 +1,12 @@
 use crate::commands::built_ins::history::write_history_to_file;
-use crate::commands::command::Command;
 use crate::supported_envs::SupportedEnv;
+use crate::syntax::command_invocation::CommandInvocation;
 use std::env;
 use std::io::Write;
 
-pub fn exit(command: &Command, output: &mut dyn Write) {
-    match env::var(SupportedEnv::HISTFILE) {
-        Ok(path) => {
-            write_history_to_file(&path, output);
-        }
-        Err(_) => {}
+pub fn exit(command: &CommandInvocation, output: &mut dyn Write) {
+    if let Ok(path) = env::var(SupportedEnv::HISTFILE) {
+        write_history_to_file(&path, output);
     }
 
     if command.arguments.is_empty() {
@@ -19,7 +16,11 @@ pub fn exit(command: &Command, output: &mut dyn Write) {
     match command.arguments[0].parse::<i32>() {
         Ok(code) => std::process::exit(code),
         Err(_) => {
-            output.write_all(format!("exit: {}: numeric argument required", command.arguments[0]).as_bytes()).unwrap();
+            output
+                .write_all(
+                    format!("exit: {}: numeric argument required", command.arguments[0]).as_bytes(),
+                )
+                .unwrap();
             std::process::exit(255);
         }
     }

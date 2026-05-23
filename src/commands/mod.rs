@@ -1,6 +1,5 @@
-pub mod validator;
-pub mod command;
-pub mod executor;
 pub mod built_ins;
-pub mod utils;
-pub mod command_args_expansion;
+pub mod executor;
+pub mod expansion;
+pub mod redirection;
+pub mod validator;

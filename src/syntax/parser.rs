@@ -1,6 +1,7 @@
-use crate::commands::command::Command;
+use crate::syntax::command_invocation::CommandInvocation;
+use crate::syntax::pipeline::Pipeline;
+use crate::syntax::redirection::{Redirection, RedirectionMode};
 use crate::syntax::scanner::token::{Token, TokenType};
-use crate::syntax::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -31,44 +32,44 @@ impl Parser {
     }
 
     fn pipeline(&mut self) -> Result<Pipeline, String> {
-        let mut segments: Vec<RedirectStatement> = Vec::new();
+        let mut commands: Vec<CommandInvocation> = Vec::new();
         let mut is_background = false;
 
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
         {
-            segments.push(self.redirect_statement());
+            commands.push(self.command_invocation());
 
-            // If the next token is a pipe, skip it and continue parsing the next segment
+            // If the next token is a pipe, skip it and continue parsing the next command.
             if self.position < self.tokens.len()
                 && self.tokens[self.position].token_type == TokenType::Pipe
             {
-                self.position += 1; // move past the pipe token
+                self.position += 1;
             } else if self.position < self.tokens.len()
                 && self.tokens[self.position].token_type == TokenType::Ampersand
             {
                 self.position += 1;
                 is_background = true;
 
-                // If ampersand is not last throw an error. Eof is always last
+                // A background marker is only valid at the end of a pipeline.
                 if self.tokens[self.position].token_type != TokenType::Eof {
                     return Err("Syntax error: '&' must be at the end of the command".to_string());
                 }
             } else {
-                break; // No more segments to parse
+                break;
             }
         }
 
         Ok(Pipeline {
-            segments,
+            commands,
             is_background,
         })
     }
 
-    fn redirect_statement(&mut self) -> RedirectStatement {
+    fn command_invocation(&mut self) -> CommandInvocation {
         let mut words: Vec<String> = Vec::new();
-        let mut redirect_std_out: Option<Redirect> = None;
-        let mut redirect_std_err: Option<Redirect> = None;
+        let mut stdout_redirection: Option<Redirection> = None;
+        let mut stderr_redirection: Option<Redirection> = None;
 
         while self.position < self.tokens.len()
             && self.tokens[self.position].token_type != TokenType::Eof
@@ -83,19 +84,19 @@ impl Parser {
                 TokenType::RedirectOut | TokenType::RedirectAppend => {
                     let mode = if self.tokens[self.position].token_type == TokenType::RedirectAppend
                     {
-                        RedirectMode::Append
+                        RedirectionMode::Append
                     } else {
-                        RedirectMode::Overwrite
+                        RedirectionMode::Overwrite
                     };
-                    self.position += 1; // move past the redirect token
+                    self.position += 1;
 
-                    // Next token should be the file path
+                    // Next token should be the file path.
                     if self.position < self.tokens.len()
                         && self.tokens[self.position].token_type == TokenType::Word
                     {
-                        redirect_std_out = Some(Redirect {
-                            redirect_mode: mode,
-                            file_location: self.tokens[self.position].lexeme.clone(),
+                        stdout_redirection = Some(Redirection {
+                            mode,
+                            file_path: self.tokens[self.position].lexeme.clone(),
                         });
                         self.position += 1;
                     }
@@ -104,37 +105,35 @@ impl Parser {
                     let mode = if self.tokens[self.position].token_type
                         == TokenType::RedirectStdErrAppend
                     {
-                        RedirectMode::Append
+                        RedirectionMode::Append
                     } else {
-                        RedirectMode::Overwrite
+                        RedirectionMode::Overwrite
                     };
-                    self.position += 1; // move past the redirect token
+                    self.position += 1;
 
-                    // Next token should be the file path
+                    // Next token should be the file path.
                     if self.position < self.tokens.len()
                         && self.tokens[self.position].token_type == TokenType::Word
                     {
-                        redirect_std_err = Some(Redirect {
-                            redirect_mode: mode,
-                            file_location: self.tokens[self.position].lexeme.clone(),
+                        stderr_redirection = Some(Redirection {
+                            mode,
+                            file_path: self.tokens[self.position].lexeme.clone(),
                         });
                         self.position += 1;
                     }
                 }
                 _ => {
-                    // Skip tokens we don't handle yet
+                    // Skip tokens we don't handle yet.
                     self.position += 1;
                 }
             }
         }
 
-        RedirectStatement {
-            command: Command {
-                command: words.first().unwrap_or(&String::new()).clone(),
-                arguments: words[1..].to_vec(),
-            },
-            redirect_std_out,
-            redirect_std_err,
+        CommandInvocation {
+            name: words.first().cloned().unwrap_or_default(),
+            arguments: words[1..].to_vec(),
+            stdout_redirection,
+            stderr_redirection,
         }
     }
 }

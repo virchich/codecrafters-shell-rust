@@ -1,8 +1,8 @@
-use crate::commands::command::Command;
 use crate::state::jobs_store;
+use crate::syntax::command_invocation::CommandInvocation;
 use std::io::Write;
 
-pub fn jobs(_command: &Command, writer: &mut dyn Write) {
+pub fn jobs(_command: &CommandInvocation, writer: &mut dyn Write) {
     let jobs_snapshot = jobs_store::list_and_reap();
 
     for (i, job) in jobs_snapshot.iter().enumerate() {
@@ -22,7 +22,7 @@ pub fn jobs(_command: &Command, writer: &mut dyn Write) {
             "[{}]{}  {:<24}{}",
             job.id, job_order, job.status, job.command
         )
-            .unwrap();
+        .unwrap();
     }
 }
 
@@ -47,7 +47,7 @@ pub fn print_done_jobs(writer: &mut dyn Write) {
                 "[{}]{}  {:<24}{}",
                 job.id, job_order, job.status, job.command
             )
-                .unwrap();
+            .unwrap();
         }
     }
 }

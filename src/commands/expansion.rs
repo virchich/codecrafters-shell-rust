@@ -1,20 +1,20 @@
-use crate::commands::command::Command;
 use crate::state::declare_store;
-use crate::syntax::statement::Pipeline;
+use crate::syntax::command_invocation::CommandInvocation;
+use crate::syntax::pipeline::Pipeline;
 
-pub fn command_args_expansion(pipeline: &mut Pipeline) {
+pub fn expand_pipeline(pipeline: &mut Pipeline) {
     pipeline
-        .segments
+        .commands
         .iter_mut()
-        .for_each(|redirect_stmt| expand_command_arguments(&mut redirect_stmt.command))
+        .for_each(expand_command_arguments)
 }
 
-fn expand_command_arguments(command: &mut Command) {
+fn expand_command_arguments(command: &mut CommandInvocation) {
     for arg in &mut command.arguments {
         *arg = ArgScanner::new(arg.clone()).scan_argument();
     }
 
-    command.arguments.retain(|arg| arg.len() > 0);
+    command.arguments.retain(|arg| !arg.is_empty());
 }
 
 struct ArgScanner {

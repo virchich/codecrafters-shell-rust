@@ -1,10 +1,10 @@
-use crate::commands::command::Command;
 use crate::state::history_store;
+use crate::syntax::command_invocation::CommandInvocation;
 use std::fs::OpenOptions;
 use std::io::Write;
 
-pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write) {
-    if command.arguments.len() > 0 {
+pub fn history(command: &CommandInvocation, output: &mut dyn Write, stderr: &mut dyn Write) {
+    if !command.arguments.is_empty() {
         match command.arguments[0].as_str() {
             "-a" => {
                 if command.arguments.len() < 2 {
@@ -33,7 +33,6 @@ pub fn history(command: &Command, output: &mut dyn Write, stderr: &mut dyn Write
                 }
                 Err(_) => {
                     writeln!(stderr, "history: {}: use either numeric value to show last N commands in history or \"-r\" option to load history from file", command.arguments[0]).unwrap();
-                    return;
                 }
             },
         }
@@ -84,7 +83,7 @@ pub fn write_history_to_file(path: &str, stderr: &mut dyn Write) {
 fn append_history_to_file(path: &str, stderr: &mut dyn Write) {
     let current_history = history_store::get_all();
 
-    match std::fs::exists(path) {
+    match std::path::Path::new(path).try_exists() {
         Ok(_) => match std::fs::read_to_string(path) {
             Ok(_) => {
                 let mut history_to_append: Vec<String> = vec![];

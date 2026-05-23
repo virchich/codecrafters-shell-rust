@@ -1,9 +1,13 @@
-use crate::commands::command::Command;
 use crate::state::complete_store;
+use crate::syntax::command_invocation::CommandInvocation;
 use std::io::Write;
 
-pub fn complete(command: &Command, writer_out: &mut dyn Write, writer_err: &mut dyn Write) {
-    if command.arguments.len() > 0 {
+pub fn complete(
+    command: &CommandInvocation,
+    writer_out: &mut dyn Write,
+    writer_err: &mut dyn Write,
+) {
+    if !command.arguments.is_empty() {
         match command.arguments[0].as_str() {
             "-C" => {
                 if command.arguments.len() < 3 {
@@ -23,12 +27,22 @@ pub fn complete(command: &Command, writer_out: &mut dyn Write, writer_err: &mut 
 
                 for record in complete_store::get_all() {
                     if record.command == *completion_command {
-                        writeln!(writer_out, "complete -C '{}' {}", record.path, record.command).unwrap();
+                        writeln!(
+                            writer_out,
+                            "complete -C '{}' {}",
+                            record.path, record.command
+                        )
+                        .unwrap();
                         return;
                     }
                 }
 
-                writeln!(writer_err, "complete: {}: no completion specification", completion_command).unwrap();
+                writeln!(
+                    writer_err,
+                    "complete: {}: no completion specification",
+                    completion_command
+                )
+                .unwrap();
             }
             "-r" => {
                 if command.arguments.len() < 2 {

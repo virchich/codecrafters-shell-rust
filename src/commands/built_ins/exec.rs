@@ -1,32 +1,32 @@
-use crate::commands::utils::open_redirect;
+use crate::commands::redirection::open_redirection;
 use crate::commands::validator::is_command_executable;
 use crate::state::jobs_store;
 use crate::supported_envs::SupportedEnv;
-use crate::syntax::statement::RedirectStatement;
+use crate::syntax::command_invocation::CommandInvocation;
 use std::env::var;
 use std::process::Stdio;
 
-pub fn exec(statement: &RedirectStatement, run_in_background: bool) {
+pub fn exec(command_invocation: &CommandInvocation, run_in_background: bool) {
     match var(SupportedEnv::PATH) {
         Ok(path) => {
-            let (executable, _) = is_command_executable(&statement.command.command, path);
+            let (executable, _) = is_command_executable(&command_invocation.name, path);
             if executable {
-                let mut command = std::process::Command::new(&statement.command.command);
-                command.args(&statement.command.arguments);
+                let mut command = std::process::Command::new(&command_invocation.name);
+                command.args(&command_invocation.arguments);
 
-                if let Some(redirect) = &statement.redirect_std_out {
-                    command.stdout(Stdio::from(open_redirect(redirect)));
+                if let Some(redirection) = &command_invocation.stdout_redirection {
+                    command.stdout(Stdio::from(open_redirection(redirection)));
                 }
 
-                if let Some(redirect) = &statement.redirect_std_err {
-                    command.stderr(Stdio::from(open_redirect(redirect)));
+                if let Some(redirection) = &command_invocation.stderr_redirection {
+                    command.stderr(Stdio::from(open_redirection(redirection)));
                 }
 
                 let mut child = command.spawn().unwrap();
 
                 if run_in_background {
-                    let command_str = std::iter::once(statement.command.command.clone())
-                        .chain(statement.command.arguments.iter().cloned())
+                    let command_str = std::iter::once(command_invocation.name.clone())
+                        .chain(command_invocation.arguments.iter().cloned())
                         .collect::<Vec<_>>()
                         .join(" ");
                     let (job_id, job_pid) = jobs_store::push(child, command_str);
@@ -35,13 +35,11 @@ pub fn exec(statement: &RedirectStatement, run_in_background: bool) {
                     child.wait().unwrap();
                 }
             } else {
-                eprintln!("{}: not found", statement.command.command);
+                eprintln!("{}: not found", command_invocation.name);
             }
-            return;
         }
         Err(_) => {
             eprintln!("type: PATH variable not set");
-            return;
         }
     }
 }

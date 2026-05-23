@@ -1,12 +1,12 @@
 use crate::commands::built_ins::jobs::print_done_jobs;
-use crate::commands::executor::run_statement;
+use crate::commands::executor::execute_pipeline;
 use crate::repl::editor::get_editor;
 use crate::state::history_store;
-use crate::syntax::parser::parser::Parser;
+use crate::syntax::parser::Parser;
 use crate::syntax::scanner::lexer::Lexer;
 use std::io;
 
-pub fn repl() {
+pub fn run() {
     let mut editor = get_editor();
 
     loop {
@@ -23,12 +23,11 @@ pub fn repl() {
                 let tokens = scanner.scan_tokens();
 
                 let mut parser = Parser::new(tokens);
+                let pipeline = parser.parse();
 
-                let statement = parser.parse();
-
-                match statement {
-                    Some(mut command) => {
-                        run_statement(&mut command);
+                match pipeline {
+                    Some(mut pipeline) => {
+                        execute_pipeline(&mut pipeline);
                     }
                     None => continue,
                 }

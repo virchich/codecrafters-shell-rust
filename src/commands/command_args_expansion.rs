@@ -11,22 +11,96 @@ pub fn command_args_expansion(pipeline: &mut Pipeline) {
 
 fn expand_command_arguments(command: &mut Command) {
     for arg in &mut command.arguments {
-        let mut str_builder = String::new();
+        *arg = ArgScanner::new(arg.clone()).scan_argument();
+    }
+}
 
-        for (byte_index, ch) in arg.char_indices() {
-            if ch != '$' || byte_index == arg.len() - 1 {
-                str_builder.push(ch);
-                continue;
-            }
+struct ArgScanner {
+    source: Vec<char>,
+    current: usize,
+    string_builder: String,
+}
 
-            match declare_store::get(&arg[byte_index + 1..]) {
-                Some(variable_value) => str_builder.push_str(&variable_value),
-                None => str_builder.push_str(""),
-            }
+impl ArgScanner {
+    fn new(argument_string: String) -> ArgScanner {
+        ArgScanner {
+            source: argument_string.chars().collect(),
+            current: 0,
+            string_builder: String::new(),
+        }
+    }
 
-            break;
+    fn scan_argument(mut self) -> String {
+        while !self.is_at_end() {
+            self.scan_char();
         }
 
-        *arg = str_builder;
+        self.string_builder
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.current >= self.source.len()
+    }
+
+    fn scan_char(&mut self) {
+        let char = self.advance();
+
+        match char {
+            '$' => {
+                if self.is_at_end() {
+                    self.string_builder.push('$');
+                } else {
+                    self.expand_variable();
+                }
+            }
+            _ => self.string_builder.push(char),
+        }
+    }
+
+    fn expand_variable(&mut self) {
+        let (name_start, name_end, resume_at) = match self.peek() {
+            '{' => match self.find_closing_brace() {
+                Some(closing_brace_index) => (
+                    self.current + 1,
+                    closing_brace_index,
+                    closing_brace_index + 1,
+                ),
+                None => {
+                    self.string_builder.push('$');
+                    return;
+                }
+            },
+            _ => (self.current, self.source.len(), self.source.len()),
+        };
+
+        let variable_name: String = self.source[name_start..name_end].iter().collect();
+
+        if let Some(variable_value) = declare_store::get(variable_name.as_str()) {
+            self.string_builder.push_str(&variable_value);
+        }
+
+        self.current = resume_at;
+    }
+
+    fn find_closing_brace(&self) -> Option<usize> {
+        if self.peek() != '{' {
+            return None;
+        }
+
+        ((self.current + 1)..self.source.len()).find(|&index| self.source[index] == '}')
+    }
+
+    fn advance(&mut self) -> char {
+        let char = self.source[self.current];
+        self.current += 1;
+        char
+    }
+
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            '\0'
+        } else {
+            self.source[self.current]
+        }
     }
 }

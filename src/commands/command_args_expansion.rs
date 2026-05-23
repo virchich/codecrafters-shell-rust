@@ -13,6 +13,8 @@ fn expand_command_arguments(command: &mut Command) {
     for arg in &mut command.arguments {
         *arg = ArgScanner::new(arg.clone()).scan_argument();
     }
+
+    command.arguments.retain(|arg| arg.len() > 0);
 }
 
 struct ArgScanner {

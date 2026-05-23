@@ -1,6 +1,6 @@
 use crate::commands::command::Command;
-use crate::commands::scanner::token::{Token, TokenType};
-use crate::commands::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
+use crate::syntax::scanner::token::{Token, TokenType};
+use crate::syntax::statement::{Pipeline, Redirect, RedirectMode, RedirectStatement};
 
 pub struct Parser {
     tokens: Vec<Token>,

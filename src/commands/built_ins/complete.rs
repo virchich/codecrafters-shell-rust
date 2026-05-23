@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::repl::complete_store;
+use crate::state::complete_store;
 use std::io::Write;
 
 pub fn complete(command: &Command, writer_out: &mut dyn Write, writer_err: &mut dyn Write) {

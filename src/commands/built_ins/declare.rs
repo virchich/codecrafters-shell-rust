@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::repl::declare_store;
+use crate::state::declare_store;
 use regex::Regex;
 use std::io::Write;
 

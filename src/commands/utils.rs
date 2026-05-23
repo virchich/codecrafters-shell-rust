@@ -1,4 +1,4 @@
-use crate::commands::statement::{Redirect, RedirectMode};
+use crate::syntax::statement::{Redirect, RedirectMode};
 use std::fs::File;
 
 pub fn open_redirect(redirect: &Redirect) -> File {

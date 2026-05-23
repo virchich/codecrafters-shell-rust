@@ -1,6 +1,6 @@
 use crate::commands::command::Command;
-use crate::commands::statement::Pipeline;
-use crate::repl::declare_store;
+use crate::state::declare_store;
+use crate::syntax::statement::Pipeline;
 
 pub fn command_args_expansion(pipeline: &mut Pipeline) {
     pipeline

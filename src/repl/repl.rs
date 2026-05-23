@@ -1,9 +1,9 @@
 use crate::commands::built_ins::jobs::print_done_jobs;
-use crate::commands::core::run_statement;
-use crate::commands::parser::parser::Parser;
-use crate::commands::scanner::lexer::Lexer;
+use crate::commands::executor::run_statement;
 use crate::repl::editor::get_editor;
-use crate::repl::history_store;
+use crate::state::history_store;
+use crate::syntax::parser::parser::Parser;
+use crate::syntax::scanner::lexer::Lexer;
 use std::io;
 
 pub fn repl() {

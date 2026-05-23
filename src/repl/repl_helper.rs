@@ -1,5 +1,5 @@
 use crate::commands::validator::get_executable_commands;
-use crate::repl::complete_store;
+use crate::state::complete_store;
 use crate::supported_envs::SupportedEnv;
 use rustyline::completion::{Candidate, Completer, FilenameCompleter, Pair};
 use rustyline::highlight::Highlighter;

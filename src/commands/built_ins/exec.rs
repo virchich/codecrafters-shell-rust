@@ -1,8 +1,8 @@
-use crate::commands::statement::RedirectStatement;
 use crate::commands::utils::open_redirect;
 use crate::commands::validator::is_command_executable;
-use crate::repl::jobs_store;
+use crate::state::jobs_store;
 use crate::supported_envs::SupportedEnv;
+use crate::syntax::statement::RedirectStatement;
 use std::env::var;
 use std::process::Stdio;
 

@@ -1,4 +1,4 @@
-use crate::commands::scanner::token::{Token, TokenType};
+use crate::syntax::scanner::token::{Token, TokenType};
 
 pub struct Lexer {
     source: Vec<char>,

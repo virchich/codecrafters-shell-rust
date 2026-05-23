@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::repl::history_store;
+use crate::state::history_store;
 use std::fs::OpenOptions;
 use std::io::Write;
 

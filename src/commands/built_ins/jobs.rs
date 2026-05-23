@@ -1,5 +1,5 @@
 use crate::commands::command::Command;
-use crate::repl::jobs_store;
+use crate::state::jobs_store;
 use std::io::Write;
 
 pub fn jobs(_command: &Command, writer: &mut dyn Write) {

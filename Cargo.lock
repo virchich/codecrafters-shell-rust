@@ -42,7 +42,6 @@ dependencies = [
 name = "codecrafters-shell"
 version = "0.1.0"
 dependencies = [
- "log",
  "regex",
  "rustyline",
 ]

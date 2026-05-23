@@ -7,3 +7,4 @@ pub mod cd;
 pub mod history;
 pub mod jobs;
 pub mod complete;
+pub mod declare;

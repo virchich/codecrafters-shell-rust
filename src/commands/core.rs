@@ -1,5 +1,6 @@
 use crate::commands::built_ins::cd::cd;
 use crate::commands::built_ins::complete::complete;
+use crate::commands::built_ins::declare::declare;
 use crate::commands::built_ins::echo::echo;
 use crate::commands::built_ins::exec::exec;
 use crate::commands::built_ins::exit::exit;
@@ -46,7 +47,7 @@ fn run_pipeline(pipeline: &Pipeline) {
             // Determine where to write: if last segment with redirect, use file;
             // if last segment without redirect, use real stdout;
             // otherwise capture into buffer for next segment.
-            let mut writer: Box<dyn Write> = if is_last {
+            let mut stdout_writer: Box<dyn Write> = if is_last {
                 if let Some(redirect) = &segment.redirect_std_out {
                     Box::new(open_redirect(redirect))
                 } else {
@@ -59,19 +60,20 @@ fn run_pipeline(pipeline: &Pipeline) {
             let mut stderr_writer: Box<dyn Write> = get_redirect(&segment);
 
             match segment.command.command.as_str() {
-                "history" => history(&segment.command, &mut *writer, &mut *stderr_writer),
+                "history" => history(&segment.command, &mut *stdout_writer, &mut *stderr_writer),
                 "exit" => exit(&segment.command, &mut *stderr_writer),
-                "echo" => echo(&segment.command, &mut *writer),
-                "type" => type_of(&segment.command, &mut *writer, &mut *stderr_writer),
-                "pwd" => pwd(&segment.command, &mut *writer, &mut *stderr_writer),
+                "echo" => echo(&segment.command, &mut *stdout_writer),
+                "type" => type_of(&segment.command, &mut *stdout_writer, &mut *stderr_writer),
+                "pwd" => pwd(&segment.command, &mut *stdout_writer, &mut *stderr_writer),
                 "cd" => cd(&segment.command, &mut *stderr_writer),
-                "jobs" => jobs(&segment.command, &mut *writer),
-                "complete" => complete(&segment.command, &mut *writer, &mut *stderr_writer),
+                "jobs" => jobs(&segment.command, &mut *stdout_writer),
+                "complete" => complete(&segment.command, &mut *stdout_writer, &mut *stderr_writer),
+                "declare" => declare(&segment.command, &mut *stdout_writer, &mut *stderr_writer),
                 _ => {}
             }
 
             // Drop writer so buffer is no longer borrowed
-            drop(writer);
+            drop(stdout_writer);
 
             if !is_last {
                 prev_output = Some(buffer);
@@ -193,6 +195,11 @@ pub fn run_redirect(redirect_statement: &RedirectStatement, run_in_background: b
             &redirect_statement.command,
             &mut *stdout_writer,
             &mut stderr_writer,
+        ),
+        "declare" => declare(
+            &redirect_statement.command,
+            &mut *stdout_writer,
+            &mut *stderr_writer,
         ),
         _ => exec(&redirect_statement, run_in_background),
     }

@@ -16,9 +16,3 @@ pub fn add(variable: String, value: String) {
     let mut guard = get_store().lock().unwrap();
     guard.insert(variable, value);
 }
-
-pub fn remove(variable: String) {
-    let mut guard = get_store().lock().unwrap();
-
-    guard.remove(&variable);
-}

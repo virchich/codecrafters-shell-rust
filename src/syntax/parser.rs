@@ -182,3 +182,101 @@ fn display_token(token_type: TokenType) -> &'static str {
         TokenType::Eof => "end of input",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Parser;
+    use crate::syntax::error::SyntaxError;
+    use crate::syntax::redirection::RedirectionMode;
+    use crate::syntax::scanner::lexer::Lexer;
+
+    fn parse(source: &str) -> Result<Option<crate::syntax::pipeline::Pipeline>, SyntaxError> {
+        let tokens = Lexer::new(source.to_string()).scan_tokens().unwrap();
+        Parser::new(tokens).parse()
+    }
+
+    #[test]
+    fn returns_none_for_empty_input() {
+        let pipeline = parse("").unwrap();
+        assert!(pipeline.is_none());
+    }
+
+    #[test]
+    fn parses_pipeline_background_and_redirections() {
+        let pipeline = parse("echo hello > out | cat 2>> err &")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(pipeline.commands.len(), 2);
+        assert!(pipeline.is_background);
+
+        let first = &pipeline.commands[0];
+        assert_eq!(first.name, "echo");
+        assert_eq!(first.arguments, vec!["hello"]);
+        assert!(matches!(
+            first.stdout_redirection.as_ref().map(|redirection| &redirection.mode),
+            Some(RedirectionMode::Overwrite)
+        ));
+        assert_eq!(
+            first.stdout_redirection.as_ref().unwrap().file_path,
+            "out"
+        );
+
+        let second = &pipeline.commands[1];
+        assert_eq!(second.name, "cat");
+        assert!(second.stdout_redirection.is_none());
+        assert!(matches!(
+            second.stderr_redirection.as_ref().map(|redirection| &redirection.mode),
+            Some(RedirectionMode::Append)
+        ));
+        assert_eq!(
+            second.stderr_redirection.as_ref().unwrap().file_path,
+            "err"
+        );
+    }
+
+    #[test]
+    fn errors_when_pipe_has_no_command_after_it() {
+        let error = parse("echo hi |").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Error parsing command: Syntax error: expected command after '|'"
+        );
+    }
+
+    #[test]
+    fn errors_when_ampersand_is_not_last() {
+        let error = parse("echo hi & pwd").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Error parsing command: Syntax error: '&' must be at the end of the command"
+        );
+    }
+
+    #[test]
+    fn errors_for_unsupported_and_operator() {
+        let error = parse("echo hi && pwd").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Error parsing command: Syntax error: unsupported operator '&&'"
+        );
+    }
+
+    #[test]
+    fn errors_when_redirection_target_is_missing() {
+        let error = parse("echo >").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Error parsing command: Syntax error: expected file after '>'"
+        );
+    }
+
+    #[test]
+    fn errors_when_command_is_missing() {
+        let error = parse("> out").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Error parsing command: Syntax error: expected command"
+        );
+    }
+}

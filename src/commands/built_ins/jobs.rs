@@ -45,3 +45,40 @@ fn job_order(index: usize, job_count: usize) -> char {
         ' '
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{job_order, print_jobs};
+    use crate::state::jobs_store::JobStatus;
+
+    #[test]
+    fn marks_last_two_jobs_with_shell_markers() {
+        assert_eq!(job_order(0, 3), ' ');
+        assert_eq!(job_order(1, 3), '-');
+        assert_eq!(job_order(2, 3), '+');
+    }
+
+    #[test]
+    fn prints_only_jobs_that_match_filter() {
+        let jobs = vec![
+            JobStatus {
+                id: 1,
+                command: "sleep 1".to_string(),
+                status: "Running".to_string(),
+            },
+            JobStatus {
+                id: 2,
+                command: "echo done".to_string(),
+                status: "Done".to_string(),
+            },
+        ];
+        let mut output = Vec::new();
+
+        print_jobs(&jobs, &mut output, |job| job.status == "Done");
+
+        assert_eq!(
+            String::from_utf8(output).unwrap(),
+            "[2]+  Done                    echo done\n"
+        );
+    }
+}

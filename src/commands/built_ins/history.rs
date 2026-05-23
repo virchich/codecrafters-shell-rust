@@ -115,3 +115,73 @@ fn append_history_to_file(path: &str, stderr: &mut dyn Write) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{history, load_history_from_file, write_history_to_file};
+    use crate::state::history_store;
+    use crate::syntax::command_invocation::CommandInvocation;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_file(label: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "rust-shell-{}-{}-{}",
+            label,
+            std::process::id(),
+            unique
+        ))
+    }
+
+    fn command(arguments: &[&str]) -> CommandInvocation {
+        CommandInvocation {
+            name: "history".to_string(),
+            arguments: arguments.iter().map(|arg| arg.to_string()).collect(),
+            stdout_redirection: None,
+            stderr_redirection: None,
+        }
+    }
+
+    #[test]
+    fn prints_last_n_entries() {
+        let _guard = history_store::test_lock();
+        history_store::clear();
+        history_store::push("echo one".to_string());
+        history_store::push("echo two".to_string());
+        history_store::push("echo three".to_string());
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        history(&command(&["2"]), &mut stdout, &mut stderr);
+
+        assert!(stderr.is_empty());
+        assert_eq!(
+            String::from_utf8(stdout).unwrap(),
+            "    2  echo two\n    3  echo three\n"
+        );
+    }
+
+    #[test]
+    fn writes_and_loads_history_files() {
+        let _guard = history_store::test_lock();
+        history_store::clear();
+        history_store::push("pwd".to_string());
+        history_store::push("echo hi".to_string());
+        let path = temp_file("history");
+        let mut stderr = Vec::new();
+
+        write_history_to_file(path.to_str().unwrap(), &mut stderr);
+        history_store::clear();
+        load_history_from_file(path.to_str().unwrap(), &mut stderr);
+
+        assert!(stderr.is_empty());
+        assert_eq!(history_store::get_all(), vec!["pwd", "echo hi"]);
+
+        fs::remove_file(path).unwrap();
+    }
+}

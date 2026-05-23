@@ -57,3 +57,53 @@ pub fn declare(
         writeln!(writer_err, "declare: no arguments specified").unwrap();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::declare;
+    use crate::state::declare_store;
+    use crate::syntax::command_invocation::CommandInvocation;
+
+    fn command(arguments: &[&str]) -> CommandInvocation {
+        CommandInvocation {
+            name: "declare".to_string(),
+            arguments: arguments.iter().map(|arg| arg.to_string()).collect(),
+            stdout_redirection: None,
+            stderr_redirection: None,
+        }
+    }
+
+    #[test]
+    fn stores_and_prints_declared_variables() {
+        let _guard = declare_store::test_lock();
+        declare_store::clear();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        declare(&command(&["FOO=bar"]), &mut stdout, &mut stderr);
+        declare(&command(&["-p", "FOO"]), &mut stdout, &mut stderr);
+
+        assert!(stderr.is_empty());
+        assert_eq!(
+            String::from_utf8(stdout).unwrap(),
+            "declare -- FOO=\"bar\"\n"
+        );
+        assert_eq!(declare_store::get("FOO"), Some("bar".to_string()));
+    }
+
+    #[test]
+    fn rejects_invalid_identifiers() {
+        let _guard = declare_store::test_lock();
+        declare_store::clear();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        declare(&command(&["1BAD=value"]), &mut stdout, &mut stderr);
+
+        assert!(stdout.is_empty());
+        assert_eq!(
+            String::from_utf8(stderr).unwrap(),
+            "declare: `1BAD=value': not a valid identifier\n"
+        );
+    }
+}

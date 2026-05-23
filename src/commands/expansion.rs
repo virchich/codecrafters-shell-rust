@@ -106,3 +106,73 @@ impl ArgScanner {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::expand_pipeline;
+    use crate::state::declare_store;
+    use crate::syntax::command_invocation::CommandInvocation;
+    use crate::syntax::pipeline::Pipeline;
+
+    #[test]
+    fn expands_plain_and_braced_variables() {
+        let _guard = declare_store::test_lock();
+        declare_store::clear();
+        declare_store::add("FOO".to_string(), "bar".to_string());
+        declare_store::add("BAR".to_string(), "baz".to_string());
+
+        let mut pipeline = Pipeline {
+            commands: vec![CommandInvocation {
+                name: "echo".to_string(),
+                arguments: vec!["$FOO".to_string(), "x${BAR}".to_string()],
+                stdout_redirection: None,
+                stderr_redirection: None,
+            }],
+            is_background: false,
+        };
+
+        expand_pipeline(&mut pipeline);
+
+        assert_eq!(pipeline.commands[0].arguments, vec!["bar", "xbaz"]);
+    }
+
+    #[test]
+    fn removes_arguments_that_expand_to_empty() {
+        let _guard = declare_store::test_lock();
+        declare_store::clear();
+
+        let mut pipeline = Pipeline {
+            commands: vec![CommandInvocation {
+                name: "echo".to_string(),
+                arguments: vec!["$MISSING".to_string(), "kept".to_string()],
+                stdout_redirection: None,
+                stderr_redirection: None,
+            }],
+            is_background: false,
+        };
+
+        expand_pipeline(&mut pipeline);
+
+        assert_eq!(pipeline.commands[0].arguments, vec!["kept"]);
+    }
+
+    #[test]
+    fn preserves_dangling_dollar_and_unclosed_braces() {
+        let _guard = declare_store::test_lock();
+        declare_store::clear();
+
+        let mut pipeline = Pipeline {
+            commands: vec![CommandInvocation {
+                name: "echo".to_string(),
+                arguments: vec!["cost$".to_string(), "${OPEN".to_string()],
+                stdout_redirection: None,
+                stderr_redirection: None,
+            }],
+            is_background: false,
+        };
+
+        expand_pipeline(&mut pipeline);
+
+        assert_eq!(pipeline.commands[0].arguments, vec!["cost$", "${OPEN"]);
+    }
+}

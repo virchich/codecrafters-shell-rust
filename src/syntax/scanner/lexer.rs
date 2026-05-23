@@ -200,3 +200,94 @@ impl Lexer {
         Ok(content)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Lexer;
+    use crate::syntax::error::SyntaxError;
+    use crate::syntax::scanner::token::TokenType;
+
+    #[test]
+    fn scans_words_quotes_and_operators() {
+        let tokens = Lexer::new("echo \"two words\" 'three'|cat 2>>err &".to_string())
+            .scan_tokens()
+            .unwrap();
+
+        let token_types: Vec<TokenType> = tokens.iter().map(|token| token.token_type).collect();
+        let lexemes: Vec<&str> = tokens.iter().map(|token| token.lexeme.as_str()).collect();
+
+        assert_eq!(
+            token_types,
+            vec![
+                TokenType::Word,
+                TokenType::Word,
+                TokenType::Word,
+                TokenType::Pipe,
+                TokenType::Word,
+                TokenType::RedirectStdErrAppend,
+                TokenType::Word,
+                TokenType::Ampersand,
+                TokenType::Eof,
+            ]
+        );
+        assert_eq!(
+            lexemes,
+            vec!["echo", "two words", "three", "|", "cat", "2>>", "err", "&", ""]
+        );
+    }
+
+    #[test]
+    fn keeps_escaped_characters_inside_arguments() {
+        let tokens = Lexer::new("echo one\\ two \"a\\\\\\\"b\"".to_string())
+            .scan_tokens()
+            .unwrap();
+
+        let lexemes: Vec<&str> = tokens.iter().map(|token| token.lexeme.as_str()).collect();
+        assert_eq!(lexemes, vec!["echo", "one two", "a\\\"b", ""]);
+    }
+
+    #[test]
+    fn recognizes_stdout_redirection_with_fd_prefix() {
+        let tokens = Lexer::new("echo test 1>file >>append".to_string())
+            .scan_tokens()
+            .unwrap();
+
+        let token_types: Vec<TokenType> = tokens.iter().map(|token| token.token_type).collect();
+        assert_eq!(
+            token_types,
+            vec![
+                TokenType::Word,
+                TokenType::Word,
+                TokenType::RedirectOut,
+                TokenType::Word,
+                TokenType::RedirectAppend,
+                TokenType::Word,
+                TokenType::Eof,
+            ]
+        );
+    }
+
+    #[test]
+    fn returns_error_for_unterminated_single_quote() {
+        let error = Lexer::new("echo 'missing".to_string())
+            .scan_tokens()
+            .unwrap_err();
+
+        assert!(matches!(
+            error,
+            SyntaxError::Lexer(message) if message == "Unterminated single quote"
+        ));
+    }
+
+    #[test]
+    fn returns_error_for_unterminated_double_quote() {
+        let error = Lexer::new("echo \"missing".to_string())
+            .scan_tokens()
+            .unwrap_err();
+
+        assert!(matches!(
+            error,
+            SyntaxError::Lexer(message) if message == "Unterminated double quote"
+        ));
+    }
+}

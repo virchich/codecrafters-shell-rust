@@ -80,3 +80,37 @@ pub fn execute(
 fn find(command_name: &str) -> Option<&'static Builtin> {
     BUILTINS.iter().find(|builtin| builtin.name == command_name)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{execute, is_builtin, names};
+    use crate::syntax::command_invocation::CommandInvocation;
+
+    #[test]
+    fn exposes_known_builtin_names() {
+        let builtin_names: Vec<&str> = names().collect();
+
+        assert!(builtin_names.contains(&"echo"));
+        assert!(builtin_names.contains(&"type"));
+        assert!(is_builtin("pwd"));
+        assert!(!is_builtin("definitely-not-a-builtin"));
+    }
+
+    #[test]
+    fn executes_builtin_and_reports_success() {
+        let command = CommandInvocation {
+            name: "echo".to_string(),
+            arguments: vec!["hi".to_string()],
+            stdout_redirection: None,
+            stderr_redirection: None,
+        };
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        let was_executed = execute(&command, &mut stdout, &mut stderr);
+
+        assert!(was_executed);
+        assert_eq!(String::from_utf8(stdout).unwrap(), "hi\n");
+        assert!(stderr.is_empty());
+    }
+}
